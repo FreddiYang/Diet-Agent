@@ -1,0 +1,315 @@
+import { FoodItem, GoalPresetType, NutritionalGoals } from '../types';
+
+export const GOAL_PRESETS: Record<GoalPresetType, NutritionalGoals> = {
+  'weight-loss': {
+    primaryGoal: 'weight-loss',
+    goalName: 'Weight Loss & Caloric Deficit',
+    targetCalories: 1800,
+    targetProtein: 135,
+    targetCarbs: 160,
+    targetFat: 55,
+    targetFiber: 35,
+    maxSodium: 2000,
+    maxSugar: 25,
+    dietaryPreferences: [],
+    focusDescription: 'Prioritizing high satiety, lean protein volume, low caloric density, and high dietary fiber while keeping added sugars minimal.'
+  },
+  'muscle-gain': {
+    primaryGoal: 'muscle-gain',
+    goalName: 'Muscle Growth & Hypertrophy',
+    targetCalories: 2600,
+    targetProtein: 175,
+    targetCarbs: 290,
+    targetFat: 75,
+    targetFiber: 32,
+    maxSodium: 2400,
+    maxSugar: 40,
+    dietaryPreferences: [],
+    focusDescription: 'Targeting a clean caloric surplus with sufficient amino acids (0.8–1g/lb) and complex carbohydrates for glycogen replenishment and recovery.'
+  },
+  'heart-health': {
+    primaryGoal: 'heart-health',
+    goalName: 'Cardiovascular & Heart Health',
+    targetCalories: 1900,
+    targetProtein: 105,
+    targetCarbs: 220,
+    targetFat: 50,
+    targetFiber: 38,
+    maxSodium: 1500,
+    maxSugar: 24,
+    dietaryPreferences: [],
+    focusDescription: 'Emphasizing Mediterranean style eating: low saturated fats, low sodium (<1500mg), rich in heart-healthy monounsaturated fats and soluble fibers.'
+  },
+  'blood-sugar': {
+    primaryGoal: 'blood-sugar',
+    goalName: 'Blood Sugar & Low Glycemic',
+    targetCalories: 1850,
+    targetProtein: 125,
+    targetCarbs: 140,
+    targetFat: 68,
+    targetFiber: 40,
+    maxSodium: 2000,
+    maxSugar: 18,
+    dietaryPreferences: [],
+    focusDescription: 'Minimizing glucose spikes by cutting refined starches/sugars, pairing carbohydrates with fiber and healthy fats, and moderating GI index.'
+  },
+  'clean-eating': {
+    primaryGoal: 'clean-eating',
+    goalName: 'Clean Eating & Gut Health',
+    targetCalories: 2000,
+    targetProtein: 115,
+    targetCarbs: 220,
+    targetFat: 60,
+    targetFiber: 45,
+    maxSodium: 1800,
+    maxSugar: 20,
+    dietaryPreferences: [],
+    focusDescription: 'Maximizing plant biodiversity, microbiome-supporting prebiotic fibers, fermented foods, and eliminating ultra-processed ingredients.'
+  },
+  'low-sodium': {
+    primaryGoal: 'low-sodium',
+    goalName: 'DASH & Low Sodium Diet',
+    targetCalories: 1900,
+    targetProtein: 110,
+    targetCarbs: 215,
+    targetFat: 55,
+    targetFiber: 36,
+    maxSodium: 1400,
+    maxSugar: 25,
+    dietaryPreferences: [],
+    focusDescription: 'Strictly limiting sodium to under 1400mg with potassium-rich whole foods, leafy greens, and uncurated spices to support healthy blood pressure.'
+  },
+  'custom': {
+    primaryGoal: 'custom',
+    goalName: 'Personalized Custom Targets',
+    targetCalories: 2000,
+    targetProtein: 130,
+    targetCarbs: 200,
+    targetFat: 60,
+    targetFiber: 30,
+    maxSodium: 2200,
+    maxSugar: 30,
+    dietaryPreferences: [],
+    focusDescription: 'Custom calibrated targets based on your unique metabolic preferences.'
+  }
+};
+
+export const SAMPLE_DAYS: { name: string; description: string; goal: GoalPresetType; items: FoodItem[] }[] = [
+  {
+    name: 'Typical Fast-Food & Takeout Day',
+    description: 'High sodium, refined sugars, saturated fat, and ultra-processed takeout items ready for dramatic healthier swaps.',
+    goal: 'weight-loss',
+    items: [
+      {
+        id: 'sample-1',
+        name: 'Bacon, Egg & Cheddar Breakfast Bagel',
+        category: 'breakfast',
+        portion: '1 large sandwich',
+        calories: 590,
+        protein: 24,
+        carbs: 56,
+        fat: 30,
+        fiber: 2,
+        sodium: 1280,
+        sugar: 6,
+        healthTags: ['Ultra-Processed', 'High Sodium', 'Saturated Fat']
+      },
+      {
+        id: 'sample-2',
+        name: 'Iced Caramel Macchiato with Whole Milk',
+        category: 'breakfast',
+        portion: '16 oz (Grande)',
+        calories: 250,
+        protein: 7,
+        carbs: 34,
+        fat: 9,
+        fiber: 0,
+        sodium: 150,
+        sugar: 32,
+        healthTags: ['High Added Sugar']
+      },
+      {
+        id: 'sample-3',
+        name: 'Double Cheeseburger with Large Fries',
+        category: 'lunch',
+        portion: '1 combo meal',
+        calories: 960,
+        protein: 34,
+        carbs: 98,
+        fat: 48,
+        fiber: 5,
+        sodium: 1540,
+        sugar: 8,
+        healthTags: ['Ultra-Processed', 'High Sodium', 'Trans/Sat Fat']
+      },
+      {
+        id: 'sample-4',
+        name: 'Regular 20oz Cola',
+        category: 'lunch',
+        portion: '20 oz bottle',
+        calories: 240,
+        protein: 0,
+        carbs: 65,
+        fat: 0,
+        fiber: 0,
+        sodium: 75,
+        sugar: 65,
+        healthTags: ['High Added Sugar', 'Empty Calories']
+      },
+      {
+        id: 'sample-5',
+        name: 'Nacho Cheese Tortilla Chips with Queso Dip',
+        category: 'snack',
+        portion: '1 bag + 3 tbsp dip',
+        calories: 340,
+        protein: 5,
+        carbs: 36,
+        fat: 20,
+        fiber: 2,
+        sodium: 580,
+        sugar: 2,
+        healthTags: ['Ultra-Processed', 'High Sodium']
+      },
+      {
+        id: 'sample-6',
+        name: '2 Slices Pepperoni Stuffed Crust Pizza',
+        category: 'dinner',
+        portion: '2 slices (large pizza)',
+        calories: 760,
+        protein: 30,
+        carbs: 72,
+        fat: 38,
+        fiber: 3,
+        sodium: 1680,
+        sugar: 7,
+        healthTags: ['High Sodium', 'Refined Flour', 'High Saturated Fat']
+      }
+    ]
+  },
+  {
+    name: 'Desk-Worker Convenience Day',
+    description: 'Pastries, deli sub, sweetened iced tea, and commercial frozen lasagna with moderate protein deficit.',
+    goal: 'blood-sugar',
+    items: [
+      {
+        id: 'desk-1',
+        name: 'Blueberry Muffin & Vanilla Latte',
+        category: 'breakfast',
+        portion: '1 bakery muffin + 12oz latte',
+        calories: 610,
+        protein: 11,
+        carbs: 88,
+        fat: 24,
+        fiber: 2,
+        sodium: 480,
+        sugar: 52,
+        healthTags: ['High Added Sugar', 'Refined Carbs']
+      },
+      {
+        id: 'desk-2',
+        name: 'Footlong Italian Deli Cold Cut Sub with Mayo & Chips',
+        category: 'lunch',
+        portion: '1 sub + 1 small bag potato chips',
+        calories: 990,
+        protein: 38,
+        carbs: 96,
+        fat: 49,
+        fiber: 4,
+        sodium: 2650,
+        sugar: 11,
+        healthTags: ['Ultra-Processed', 'Excess Sodium', 'Processed Meats']
+      },
+      {
+        id: 'desk-3',
+        name: 'Sweetened Green Tea Bottle & Chocolate Chip Cookie',
+        category: 'snack',
+        portion: '1 bottle + 1 bakery cookie',
+        calories: 380,
+        protein: 4,
+        carbs: 62,
+        fat: 14,
+        fiber: 1,
+        sodium: 220,
+        sugar: 44,
+        healthTags: ['High Added Sugar']
+      },
+      {
+        id: 'desk-4',
+        name: 'Frozen Meat Lasagna with Garlic Bread Slices',
+        category: 'dinner',
+        portion: '1 tray + 2 slices bread',
+        calories: 780,
+        protein: 28,
+        carbs: 82,
+        fat: 37,
+        fiber: 4,
+        sodium: 1820,
+        sugar: 12,
+        healthTags: ['High Sodium', 'High Saturated Fat']
+      }
+    ]
+  },
+  {
+    name: 'Balanced Clean Day (High Compliance)',
+    description: 'High fiber, lean protein, healthy omega fats, and low sodium baseline.',
+    goal: 'clean-eating',
+    items: [
+      {
+        id: 'clean-1',
+        name: 'Rolled Oats with Greek Yogurt, Blueberries & Chia Seeds',
+        category: 'breakfast',
+        portion: '1 bowl (45g oats, 150g yogurt, 50g berries)',
+        calories: 380,
+        protein: 26,
+        carbs: 48,
+        fat: 9,
+        fiber: 9,
+        sodium: 85,
+        sugar: 12,
+        healthTags: ['High Fiber', 'Lean Protein', 'Antioxidants']
+      },
+      {
+        id: 'clean-2',
+        name: 'Grilled Salmon Quinoa Salad with Olive Oil & Lemon',
+        category: 'lunch',
+        portion: '150g salmon, 1 cup quinoa, mixed greens',
+        calories: 520,
+        protein: 38,
+        carbs: 42,
+        fat: 20,
+        fiber: 7,
+        sodium: 320,
+        sugar: 3,
+        healthTags: ['Omega-3', 'Lean Protein', 'Whole Grains']
+      },
+      {
+        id: 'clean-3',
+        name: 'Apple Slices with 1 tbsp Natural Almond Butter',
+        category: 'snack',
+        portion: '1 honeycrisp apple + 16g almond butter',
+        calories: 190,
+        protein: 4,
+        carbs: 27,
+        fat: 9,
+        fiber: 5,
+        sodium: 5,
+        sugar: 19,
+        healthTags: ['Natural Whole Food', 'High Fiber']
+      },
+      {
+        id: 'clean-4',
+        name: 'Herb-Roasted Chicken Breast with Sweet Potato & Steamed Broccoli',
+        category: 'dinner',
+        portion: '180g chicken, 1 medium sweet potato, 1 cup broccoli',
+        calories: 490,
+        protein: 46,
+        carbs: 44,
+        fat: 12,
+        fiber: 8,
+        sodium: 380,
+        sugar: 8,
+        healthTags: ['Lean Protein', 'Micronutrient Dense', 'Low Sodium']
+      }
+    ]
+  }
+];

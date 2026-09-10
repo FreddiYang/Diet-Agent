@@ -1,0 +1,6 @@
+{
+  "name": "Food Consumption & Nutritional Alternatives Analyzer",
+  "description": "Analyze your daily food consumption, evaluate macros against personal nutritional goals, and discover healthier food alternatives and smart swaps.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
