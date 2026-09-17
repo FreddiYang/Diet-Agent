@@ -69,7 +69,7 @@ export const DailySummaryBar: React.FC<DailySummaryBarProps> = ({ items, goals }
       </div>
 
       {/* Grid of Key Macro Meters */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 pt-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 pt-4">
         {/* Protein */}
         <div className="bg-stone-50/80 rounded-xl p-3 border border-stone-200/60">
           <div className="flex items-center justify-between text-xs mb-1.5">

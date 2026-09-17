@@ -12,6 +12,7 @@ export interface FoodItem {
   fiber: number;   // in grams
   sodium: number;  // in mg
   sugar: number;   // in grams
+  icon?: string;
   healthTags?: string[];
   notes?: string;
 }
@@ -44,6 +45,7 @@ export interface HealthierAlternative {
   originalFoodId: string;
   originalFoodName: string;
   suggestedItemName: string;
+  icon?: string;
   portion: string;
   calories: number;
   protein: number;

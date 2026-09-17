@@ -169,6 +169,7 @@ export default function App() {
     const swappedItem: FoodItem = {
       id: `swapped-${Date.now()}`,
       name: alt.suggestedItemName,
+      icon: alt.icon,
       category,
       portion: alt.portion,
       calories: alt.calories,
@@ -302,12 +303,12 @@ export default function App() {
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <main className="flex-1 w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 py-6 space-y-6">
         {/* Daily Summary Bar & Macro Meters */}
         <DailySummaryBar items={items} goals={goals} />
 
-        {/* Mobile View Filter Tabs */}
-        <div className="flex lg:hidden items-center justify-center p-1 bg-stone-200/80 rounded-xl max-w-sm mx-auto">
+        {/* Mobile / Tablet View Filter Tabs */}
+        <div className="flex xl:hidden items-center justify-center p-1 bg-stone-200/80 rounded-xl max-w-sm mx-auto">
           <button
             onClick={() => setViewMode('all')}
             className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-colors ${
@@ -335,9 +336,9 @@ export default function App() {
         </div>
 
         {/* Grid: Food Log on Left, Audit & Healthier Alternatives on Right */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 2xl:gap-8 items-start w-full min-w-0">
           {/* Left Column: Food Logging & Meals */}
-          <div className={`lg:col-span-6 space-y-6 ${viewMode === 'swaps' ? 'hidden lg:block' : 'block'}`}>
+          <div className={`xl:col-span-7 2xl:col-span-7 space-y-6 min-w-0 ${viewMode === 'swaps' ? 'hidden xl:block' : 'block'}`}>
             <FoodLogSection
               items={items}
               onAddItem={handleAddItem}
@@ -348,8 +349,8 @@ export default function App() {
             />
           </div>
 
-          {/* Right Column: Deep Nutritional Audit & Healthier Alternatives */}
-          <div className={`lg:col-span-6 space-y-6 ${viewMode === 'log' ? 'hidden lg:block' : 'block'}`}>
+          {/* Right Column: Deep Nutritional Audit & Healthier Alternatives (Sticky on desktop) */}
+          <div className={`xl:col-span-5 2xl:col-span-5 space-y-6 xl:sticky xl:top-20 min-w-0 ${viewMode === 'log' ? 'hidden xl:block' : 'block'}`}>
             {/* Daily Consumption Analysis Card */}
             <AnalysisOverview
               analysis={analysis}

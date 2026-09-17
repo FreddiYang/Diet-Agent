@@ -268,11 +268,10 @@ export default async function handler(req: any, res: any) {
       httpOptions: { headers: { 'User-Agent': 'aistudio-build' } },
     });
 
-    const prompt = `You are an elite clinical dietitian and functional nutrition coach.
-Analyze the user's daily food consumption against their specified nutritional goals:
+    const prompt = `You are a concise clinical dietitian.
+Analyze the user's daily food consumption against their nutritional goals:
 USER GOAL:
 Name: ${goals?.goalName || 'Balanced Nutrition'}
-Primary Goal: ${goals?.primaryGoal || 'healthy'}
 Target Calories: ${goals?.targetCalories || 2000} kcal
 Target Protein: ${goals?.targetProtein || 120} g
 Target Carbs: ${goals?.targetCarbs || 220} g
@@ -281,32 +280,26 @@ Target Fiber: ${goals?.targetFiber || 30} g
 Max Sodium: ${goals?.maxSodium || 2300} mg
 Max Sugar: ${goals?.maxSugar || 30} g
 Dietary Restrictions: ${(dietaryPreferences || []).join(', ') || 'None'}
-Goal Focus: ${goals?.focusDescription || 'Nutritional optimization'}
 
 DAILY FOOD ITEMS CONSUMED:
 ${JSON.stringify(items, null, 2)}
 
-TASK:
+TASK & STRICT RULES:
 1. Provide an objective Health Score (0-100) and Health Grade ('A', 'B+', 'B', 'C', 'Needs Improvement').
-2. Write a concise, evidence-based executive summary evaluating their progress against their specific goal.
-3. List 2-4 key nutritional strengths.
-4. List 2-4 key nutritional areas of concern.
-5. Suggest 1 to 4 concrete, delicious, and realistic HEALTHIER ALTERNATIVES for the most problematic/suboptimal items in their day.
-   - For EACH alternative:
-     - Match it directly to the exact 'originalFoodId' and 'originalFoodName' from the list!
-     - 'suggestedItemName': specific healthier swap.
-     - Accurate macros for the swap (calories, protein, carbs, fat, fiber, sodium, sugar).
-     - 'whyHealthier': clinical reasoning.
-     - 'satisfiesCraving': psychological explanation of how it satisfies cravings without deprivation.
-     - 'preparationOrOrderTip': real-world hack (how to order it at restaurants, or prep at home).
-     - 'savings': exact calculation of saved calories, sodium, sugar, fat, and gains in protein/fiber.
-6. Provide a 3-step daily tactical action plan for tomorrow.`;
+2. Provide a 1-sentence summary of goal alignment.
+3. List 1-2 key nutritional strengths.
+4. List 1-2 key nutritional areas of concern.
+5. SWAP LIMIT RULE:
+   - If daily intake (calories, sodium, sugar) is ALREADY at or below daily targets, return an EMPTY alternatives array: [] (0 swaps).
+   - If daily intake exceeds target limits, ONLY generate the minimum number of swaps (1 or at most 2 swaps) needed to bring the daily total right below the limit. Stop iterating as soon as total is below limit!
+   - Keep 'whyHealthier' and 'satisfiesCraving' to 1 brief, punchy sentence each (fewer words!).
+6. Provide a 1-sentence daily action tip.`;
 
     const response = await ai.models.generateContent({
       model: 'gemini-3.8-flash',
       contents: prompt,
       config: {
-        systemInstruction: 'You are a board-certified clinical nutritionist and culinary expert. Produce precise, scientific, empathetic, and actionable JSON.',
+        systemInstruction: 'You are a clinical nutritionist. Keep all text concise, punchy, and minimal. Never overwhelm with long words.',
         responseMimeType: 'application/json',
         responseSchema: {
           type: Type.OBJECT,
@@ -363,6 +356,42 @@ TASK:
     const parsed = JSON.parse(response.text?.trim() || '{}');
     const totals = calculateMacroTotals(items);
     parsed.macroTotals = totals;
+
+    // Strict user requirement: stop swap iterations as soon as intake is right below the limit
+    const isOverLimit =
+      (goals?.targetCalories > 0 && totals.calories > goals.targetCalories) ||
+      (goals?.maxSodium > 0 && totals.sodium > goals.maxSodium) ||
+      (goals?.maxSugar > 0 && totals.sugar > goals.maxSugar);
+
+    if (!isOverLimit) {
+      parsed.alternatives = [];
+      parsed.summary = `All clear! Your daily intake is currently below your target limit.`;
+    } else if (Array.isArray(parsed.alternatives) && parsed.alternatives.length > 0) {
+      let simCal = totals.calories;
+      let simSod = totals.sodium;
+      let simSug = totals.sugar;
+      const pruned: any[] = [];
+
+      for (const alt of parsed.alternatives) {
+        pruned.push(alt);
+        const calSav = Number(alt?.savings?.calories) || 0;
+        const sodSav = Number(alt?.savings?.sodium) || 0;
+        const sugSav = Number(alt?.savings?.sugar) || 0;
+        simCal -= calSav;
+        simSod -= sodSav;
+        simSug -= sugSav;
+
+        const calOk = !goals?.targetCalories || simCal <= goals.targetCalories;
+        const sodOk = !goals?.maxSodium || simSod <= goals.maxSodium;
+        const sugOk = !goals?.maxSugar || simSug <= goals.maxSugar;
+        if (calOk && sodOk && sugOk) {
+          break;
+        }
+        if (pruned.length >= 2) break;
+      }
+      parsed.alternatives = pruned;
+    }
+
     return res.status(200).json(parsed);
   } catch (err: any) {
     console.error('Vercel API error in analyze-consumption:', err);

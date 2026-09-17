@@ -103,6 +103,7 @@ export const SAMPLE_DAYS: { name: string; description: string; goal: GoalPresetT
       {
         id: 'sample-1',
         name: 'Bacon, Egg & Cheddar Breakfast Bagel',
+        icon: '🥯',
         category: 'breakfast',
         portion: '1 large sandwich',
         calories: 590,
@@ -117,6 +118,7 @@ export const SAMPLE_DAYS: { name: string; description: string; goal: GoalPresetT
       {
         id: 'sample-2',
         name: 'Iced Caramel Macchiato with Whole Milk',
+        icon: '☕',
         category: 'breakfast',
         portion: '16 oz (Grande)',
         calories: 250,
@@ -131,6 +133,7 @@ export const SAMPLE_DAYS: { name: string; description: string; goal: GoalPresetT
       {
         id: 'sample-3',
         name: 'Double Cheeseburger with Large Fries',
+        icon: '🍔',
         category: 'lunch',
         portion: '1 combo meal',
         calories: 960,
@@ -145,6 +148,7 @@ export const SAMPLE_DAYS: { name: string; description: string; goal: GoalPresetT
       {
         id: 'sample-4',
         name: 'Regular 20oz Cola',
+        icon: '🥤',
         category: 'lunch',
         portion: '20 oz bottle',
         calories: 240,
@@ -159,6 +163,7 @@ export const SAMPLE_DAYS: { name: string; description: string; goal: GoalPresetT
       {
         id: 'sample-5',
         name: 'Nacho Cheese Tortilla Chips with Queso Dip',
+        icon: '🍟',
         category: 'snack',
         portion: '1 bag + 3 tbsp dip',
         calories: 340,
@@ -173,6 +178,7 @@ export const SAMPLE_DAYS: { name: string; description: string; goal: GoalPresetT
       {
         id: 'sample-6',
         name: '2 Slices Pepperoni Stuffed Crust Pizza',
+        icon: '🍕',
         category: 'dinner',
         portion: '2 slices (large pizza)',
         calories: 760,

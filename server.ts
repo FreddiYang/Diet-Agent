@@ -85,140 +85,185 @@ function generateRuleBasedAnalysis(items: any[], goals: any) {
     areasOfConcern.push(`Added sugar consumption (${totals.sugar}g) exceeds your recommended cap of ${goals.maxSugar}g, driving insulin spikes.`);
   }
 
-  // Identify high-impact items for swaps
-  for (const item of items) {
-    const nameLower = (item.name || '').toLowerCase();
-    
-    if (nameLower.includes('burger') || nameLower.includes('cheeseburger') || nameLower.includes('fries')) {
-      alternatives.push({
-        id: `swap-${item.id}`,
-        originalFoodId: item.id,
-        originalFoodName: item.name,
-        suggestedItemName: 'Grilled Turkey & Avocado Brioche with Air-Fried Sweet Potato Wedges',
-        portion: '1 sandwich (5oz lean patty) + 100g sweet potato wedges',
-        calories: 480,
-        protein: 38,
-        carbs: 46,
-        fat: 16,
-        fiber: 7,
-        sodium: 520,
-        sugar: 5,
-        whyHealthier: 'Cuts saturated fat and ultra-processed sodium in half while doubling micronutrients and slow-digesting fiber.',
-        satisfiesCraving: 'Delivers the same savory, grilled burger satisfaction and crispy hot potato mouthfeel without inflammatory seed oils.',
-        preparationOrOrderTip: 'At restaurants: Ask for lean grilled chicken or turkey patty, side house salad or baked potato with dressing on the side.',
-        savings: {
-          calories: Math.max(0, item.calories - 480),
-          sodium: Math.max(0, item.sodium - 520),
-          sugar: Math.max(0, item.sugar - 5),
-          fat: Math.max(0, item.fat - 16),
-          proteinGain: Math.max(0, 38 - item.protein),
-          fiberGain: Math.max(0, 7 - item.fiber),
+  // Identify high-impact items for swaps only if exceeding daily limits
+  const isOverDailyLimit =
+    (goals.targetCalories > 0 && totals.calories > goals.targetCalories) ||
+    (goals.maxSodium > 0 && totals.sodium > goals.maxSodium) ||
+    (goals.maxSugar > 0 && totals.sugar > goals.maxSugar);
+
+  if (isOverDailyLimit) {
+    let simCalories = totals.calories;
+    let simSodium = totals.sodium;
+    let simSugar = totals.sugar;
+
+    for (const item of items) {
+      // If already brought right below all daily limits, stop immediately!
+      const calSatisfied = goals.targetCalories <= 0 || simCalories <= goals.targetCalories;
+      const sodiumSatisfied = goals.maxSodium <= 0 || simSodium <= goals.maxSodium;
+      const sugarSatisfied = goals.maxSugar <= 0 || simSugar <= goals.maxSugar;
+      if (calSatisfied && sodiumSatisfied && sugarSatisfied) {
+        break;
+      }
+
+      const nameLower = (item.name || '').toLowerCase();
+      let alt: any = null;
+
+      if (nameLower.includes('burger') || nameLower.includes('cheeseburger') || nameLower.includes('fries') || nameLower.includes('patty')) {
+        alt = {
+          id: `swap-${item.id}`,
+          originalFoodId: item.id,
+          originalFoodName: item.name,
+          suggestedItemName: 'Grilled Herb Chicken & Sweet Potato',
+          icon: '🍠',
+          portion: '6oz breast + 1 sweet potato',
+          calories: 420,
+          protein: 44,
+          carbs: 38,
+          fat: 8,
+          fiber: 6,
+          sodium: 380,
+          sugar: 6,
+          whyHealthier: 'Cuts saturated fats and processed sodium with lean poultry.',
+          satisfiesCraving: 'Juicy savory meal with natural caramelized sweet potato.',
+          preparationOrOrderTip: 'Available directly from your Graphic Food catalog.',
+          savings: {
+            calories: Math.max(0, item.calories - 420),
+            sodium: Math.max(0, item.sodium - 380),
+            sugar: Math.max(0, item.sugar - 6),
+            fat: Math.max(0, item.fat - 8),
+            proteinGain: Math.max(0, 44 - item.protein),
+            fiberGain: Math.max(0, 6 - item.fiber),
+          }
+        };
+      } else if (nameLower.includes('cola') || nameLower.includes('soda') || nameLower.includes('latte') || nameLower.includes('macchiato')) {
+        alt = {
+          id: `swap-${item.id}`,
+          originalFoodId: item.id,
+          originalFoodName: item.name,
+          suggestedItemName: 'Sparkling Water with Fresh Lime',
+          icon: '🫧',
+          portion: '16 oz iced glass',
+          calories: 5,
+          protein: 0,
+          carbs: 1,
+          fat: 0,
+          fiber: 0,
+          sodium: 10,
+          sugar: 0,
+          whyHealthier: 'Completely eliminates empty liquid sugars and insulin spikes.',
+          satisfiesCraving: 'Crisp, cold effervescence with natural citrus twist.',
+          preparationOrOrderTip: 'Available directly from your Graphic Food catalog.',
+          savings: {
+            calories: Math.max(0, item.calories - 5),
+            sodium: Math.max(0, item.sodium - 10),
+            sugar: Math.max(0, item.sugar - 0),
+            fat: Math.max(0, item.fat - 0),
+            proteinGain: 0,
+            fiberGain: 0,
+          }
+        };
+      } else if (nameLower.includes('pizza') || nameLower.includes('lasagna') || nameLower.includes('calzone')) {
+        alt = {
+          id: `swap-${item.id}`,
+          originalFoodId: item.id,
+          originalFoodName: item.name,
+          suggestedItemName: 'Thin Crust Margherita & Chicken',
+          icon: '🍕',
+          portion: '2 slices',
+          calories: 390,
+          protein: 36,
+          carbs: 36,
+          fat: 12,
+          fiber: 5,
+          sodium: 540,
+          sugar: 4,
+          whyHealthier: 'Thin crust with lean chicken reduces excess starch and sodium.',
+          satisfiesCraving: 'Hot bubbly mozzarella and aromatic tomato sauce.',
+          preparationOrOrderTip: 'Available directly from your Graphic Food catalog.',
+          savings: {
+            calories: Math.max(0, item.calories - 390),
+            sodium: Math.max(0, item.sodium - 540),
+            sugar: Math.max(0, item.sugar - 4),
+            fat: Math.max(0, item.fat - 12),
+            proteinGain: Math.max(0, 36 - item.protein),
+            fiberGain: Math.max(0, 5 - item.fiber),
+          }
+        };
+      } else if (nameLower.includes('chip') || nameLower.includes('nacho') || nameLower.includes('pretzel')) {
+        alt = {
+          id: `swap-${item.id}`,
+          originalFoodId: item.id,
+          originalFoodName: item.name,
+          suggestedItemName: 'Air-Popped Sea Salt Popcorn',
+          icon: '🍿',
+          portion: '3 cups popped',
+          calories: 110,
+          protein: 3,
+          carbs: 22,
+          fat: 1.5,
+          fiber: 4,
+          sodium: 140,
+          sugar: 0,
+          whyHealthier: 'Whole grain crunch with 80% less fat and low sodium.',
+          satisfiesCraving: 'Warm, airy, salty crunch with zero trans fats.',
+          preparationOrOrderTip: 'Available directly from your Graphic Food catalog.',
+          savings: {
+            calories: Math.max(0, item.calories - 110),
+            sodium: Math.max(0, item.sodium - 140),
+            sugar: Math.max(0, item.sugar - 0),
+            fat: Math.max(0, item.fat - 1.5),
+            proteinGain: Math.max(0, 3 - item.protein),
+            fiberGain: Math.max(0, 4 - item.fiber),
+          }
+        };
+      } else if (nameLower.includes('sub') || nameLower.includes('sandwich') || nameLower.includes('bagel')) {
+        alt = {
+          id: `swap-${item.id}`,
+          originalFoodId: item.id,
+          originalFoodName: item.name,
+          suggestedItemName: 'Roast Turkey on Sprouted Multigrain',
+          icon: '🥪',
+          portion: '1 sandwich',
+          calories: 360,
+          protein: 34,
+          carbs: 34,
+          fat: 9,
+          fiber: 7,
+          sodium: 520,
+          sugar: 3,
+          whyHealthier: 'Lean roasted turkey with sprouted whole grains and high fiber.',
+          satisfiesCraving: 'Hearty deli layers with crisp lettuce and mustard.',
+          preparationOrOrderTip: 'Available directly from your Graphic Food catalog.',
+          savings: {
+            calories: Math.max(0, item.calories - 360),
+            sodium: Math.max(0, item.sodium - 520),
+            sugar: Math.max(0, item.sugar - 3),
+            fat: Math.max(0, item.fat - 9),
+            proteinGain: Math.max(0, 34 - item.protein),
+            fiberGain: Math.max(0, 7 - item.fiber),
+          }
+        };
+      }
+
+      if (alt) {
+        alternatives.push(alt);
+        simCalories -= alt.savings.calories;
+        simSodium -= alt.savings.sodium;
+        simSugar -= alt.savings.sugar;
+
+        // If limits now satisfied or we reached 2 swaps, break
+        if (
+          (goals.targetCalories <= 0 || simCalories <= goals.targetCalories) &&
+          (goals.maxSodium <= 0 || simSodium <= goals.maxSodium) &&
+          (goals.maxSugar <= 0 || simSugar <= goals.maxSugar)
+        ) {
+          break;
         }
-      });
-    } else if (nameLower.includes('cola') || nameLower.includes('soda') || nameLower.includes('latte') || nameLower.includes('macchiato')) {
-      alternatives.push({
-        id: `swap-${item.id}`,
-        originalFoodId: item.id,
-        originalFoodName: item.name,
-        suggestedItemName: 'Cold Brew Coffee with Splash of Unsweetened Almond Milk & Cinnamon (or Citrus Sparkling Water)',
-        portion: '16 oz cup',
-        calories: 35,
-        protein: 1,
-        carbs: 2,
-        fat: 2,
-        fiber: 1,
-        sodium: 30,
-        sugar: 0,
-        whyHealthier: 'Completely eliminates empty liquid sugars, preserving insulin sensitivity and saving hundreds of discretionary calories.',
-        satisfiesCraving: 'Provides rich roasted coffee aromatics with creamy texture from almond milk and zero sugar crash.',
-        preparationOrOrderTip: 'Order: "Cold brew or iced Americano with a splash of unsweetened plant milk and 1 pump sugar-free vanilla or cinnamon dusting."',
-        savings: {
-          calories: Math.max(0, item.calories - 35),
-          sodium: Math.max(0, item.sodium - 30),
-          sugar: Math.max(0, item.sugar - 0),
-          fat: Math.max(0, item.fat - 2),
-          proteinGain: 0,
-          fiberGain: 1,
+
+        if (alternatives.length >= 2) {
+          break;
         }
-      });
-    } else if (nameLower.includes('pizza') || nameLower.includes('lasagna')) {
-      alternatives.push({
-        id: `swap-${item.id}`,
-        originalFoodId: item.id,
-        originalFoodName: item.name,
-        suggestedItemName: 'Thin Whole-Wheat or Cauliflower Flatbread with San Marzano Marinara, Fresh Mozzarella & Grilled Chicken',
-        portion: '2 generous slices (1/2 flatbread)',
-        calories: 420,
-        protein: 36,
-        carbs: 38,
-        fat: 14,
-        fiber: 6,
-        sodium: 680,
-        sugar: 4,
-        whyHealthier: 'Swaps refined bleached dough for fiber-rich crust and boosts lean protein while reducing saturated grease.',
-        satisfiesCraving: 'Hot bubbly melted mozzarella, tangy marinara, and crispy crust deliver authentic pizza night indulgence.',
-        preparationOrOrderTip: 'Order thin crust, double tomato sauce, add grilled chicken and mushrooms, ask for light cheese.',
-        savings: {
-          calories: Math.max(0, item.calories - 420),
-          sodium: Math.max(0, item.sodium - 680),
-          sugar: Math.max(0, item.sugar - 4),
-          fat: Math.max(0, item.fat - 14),
-          proteinGain: Math.max(0, 36 - item.protein),
-          fiberGain: Math.max(0, 6 - item.fiber),
-        }
-      });
-    } else if (nameLower.includes('chips') || nameLower.includes('doritos') || nameLower.includes('muffin') || nameLower.includes('cookie')) {
-      alternatives.push({
-        id: `swap-${item.id}`,
-        originalFoodId: item.id,
-        originalFoodName: item.name,
-        suggestedItemName: 'Air-Popped Sea Salt Popcorn or Crispy Roasted Edamame with Smoked Paprika',
-        portion: '1 bowl (3 cups popcorn or 40g edamame)',
-        calories: 140,
-        protein: 11,
-        carbs: 18,
-        fat: 4,
-        fiber: 5,
-        sodium: 180,
-        sugar: 1,
-        whyHealthier: 'Whole-grain complex carbs and plant protein deliver lasting crunch with fraction of the saturated oils.',
-        satisfiesCraving: 'Intense salty crunch that keeps your hands and palate busy without the caloric density of fried chips.',
-        preparationOrOrderTip: 'Keep a bag of roasted chickpeas or plain air-popped kernels in your pantry with nutritional yeast or garlic powder.',
-        savings: {
-          calories: Math.max(0, item.calories - 140),
-          sodium: Math.max(0, item.sodium - 180),
-          sugar: Math.max(0, item.sugar - 1),
-          fat: Math.max(0, item.fat - 4),
-          proteinGain: Math.max(0, 11 - item.protein),
-          fiberGain: Math.max(0, 5 - item.fiber),
-        }
-      });
-    } else if (nameLower.includes('sub') || nameLower.includes('sandwich') || nameLower.includes('bagel')) {
-      alternatives.push({
-        id: `swap-${item.id}`,
-        originalFoodId: item.id,
-        originalFoodName: item.name,
-        suggestedItemName: 'Sprouted Whole Grain Wrap with Roasted Turkey Breast, Avocado, Dijon & Crisp Greens',
-        portion: '1 large wrap',
-        calories: 390,
-        protein: 34,
-        carbs: 36,
-        fat: 13,
-        fiber: 8,
-        sodium: 620,
-        sugar: 3,
-        whyHealthier: 'Replaces processed deli meats with carved turkey, eliminates mayonnaise for heart-healthy avocado fats, and doubles fiber.',
-        satisfiesCraving: 'Fresh crunch, creamy avocado spread, tangy dijon kick, and hearty satisfying protein chew.',
-        preparationOrOrderTip: 'Request whole grain bread or lettuce wrap, oil and vinegar or mustard instead of mayonnaise, double veggies.',
-        savings: {
-          calories: Math.max(0, item.calories - 390),
-          sodium: Math.max(0, item.sodium - 620),
-          sugar: Math.max(0, item.sugar - 3),
-          fat: Math.max(0, item.fat - 13),
-          proteinGain: Math.max(0, 34 - item.protein),
-          fiberGain: Math.max(0, 8 - item.fiber),
-        }
-      });
+      }
     }
   }
 
