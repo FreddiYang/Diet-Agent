@@ -8,6 +8,7 @@ import { GoalSettingsModal } from './components/GoalSettingsModal';
 import { QuickSwapModal } from './components/QuickSwapModal';
 import { FoodItem, HealthierAlternative, NutritionalGoals, DailyAnalysis, MealCategory } from './types';
 import { GOAL_PRESETS, SAMPLE_DAYS } from './data/presets';
+import { analyzeConsumptionLocally } from './utils/nutritionEngine';
 import { Sparkles, Utensils, ArrowRightLeft, ShieldCheck, Flame } from 'lucide-react';
 
 const STORAGE_KEYS = {
@@ -38,7 +39,21 @@ export default function App() {
     return SAMPLE_DAYS[0].items;
   });
 
-  const [analysis, setAnalysis] = useState<DailyAnalysis | null>(null);
+  // Pre-calculate immediate analysis so UI is instantly populated on Vercel or any environment
+  const [analysis, setAnalysis] = useState<DailyAnalysis | null>(() => {
+    try {
+      const savedGoals = localStorage.getItem(STORAGE_KEYS.GOALS);
+      const parsedGoals = savedGoals ? JSON.parse(savedGoals) : GOAL_PRESETS['weight-loss'];
+      const savedItems = localStorage.getItem(STORAGE_KEYS.ITEMS);
+      const parsedItems = savedItems ? JSON.parse(savedItems) : SAMPLE_DAYS[0].items;
+      if (parsedItems && parsedItems.length > 0) {
+        return analyzeConsumptionLocally(parsedItems, parsedGoals);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return analyzeConsumptionLocally(SAMPLE_DAYS[0].items, GOAL_PRESETS['weight-loss']);
+  });
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isParsing, setIsParsing] = useState(false);
   const [showGoalsModal, setShowGoalsModal] = useState(false);
@@ -69,7 +84,7 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Run consumption analysis
+  // Run consumption analysis with instant fallback to local clinical engine
   const runAnalysis = useCallback(async (currentItems = items, currentGoals = goals) => {
     if (currentItems.length === 0) {
       setAnalysis(null);
@@ -77,6 +92,9 @@ export default function App() {
     }
     setIsAnalyzing(true);
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+
       const res = await fetch('/api/analyze-consumption', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -85,13 +103,29 @@ export default function App() {
           goals: currentGoals,
           dietaryPreferences: currentGoals.dietaryPreferences,
         }),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
-      if (!res.ok) throw new Error('Analysis request failed');
-      const data = await res.json();
-      setAnalysis(data);
+      const contentType = res.headers.get('content-type') || '';
+      if (res.ok && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (data && (!data.alternatives || data.alternatives.length === 0)) {
+          const local = analyzeConsumptionLocally(currentItems, currentGoals);
+          if (local.alternatives && local.alternatives.length > 0) {
+            data.alternatives = local.alternatives;
+          }
+        }
+        setAnalysis(data);
+      } else {
+        console.warn('API returned non-JSON or status ' + res.status + ', using local nutrition engine');
+        const local = analyzeConsumptionLocally(currentItems, currentGoals);
+        setAnalysis(local);
+      }
     } catch (err) {
-      console.error('Failed to run food consumption analysis:', err);
+      console.warn('API analysis unavailable, running client-side clinical analysis engine:', err);
+      const local = analyzeConsumptionLocally(currentItems, currentGoals);
+      setAnalysis(local);
     } finally {
       setIsAnalyzing(false);
     }
@@ -100,6 +134,8 @@ export default function App() {
   // Initial automatic analysis on mount
   useEffect(() => {
     if (items.length > 0 && !analysis) {
+      const local = analyzeConsumptionLocally(items, goals);
+      setAnalysis(local);
       runAnalysis(items, goals);
     }
   }, []);
@@ -108,6 +144,7 @@ export default function App() {
   const handleAddItem = (newItem: FoodItem) => {
     const updated = [...items, newItem];
     setItems(updated);
+    setAnalysis(analyzeConsumptionLocally(updated, goals));
     showToast(`Added "${newItem.name}" to ${newItem.category}`);
     runAnalysis(updated, goals);
   };
@@ -117,6 +154,7 @@ export default function App() {
     const target = items.find(i => i.id === id);
     const updated = items.filter(i => i.id !== id);
     setItems(updated);
+    setAnalysis(analyzeConsumptionLocally(updated, goals));
     if (target) {
       showToast(`Removed "${target.name}"`);
     }
@@ -151,47 +189,60 @@ export default function App() {
     });
 
     setItems(updated);
+    setAnalysis(analyzeConsumptionLocally(updated, goals));
     showToast(`Swapped "${alt.originalFoodName}" for "${alt.suggestedItemName}"!`);
     runAnalysis(updated, goals);
   };
 
-  // Parse natural language food text using server-side Gemini
+  // Parse natural language food text using server-side Gemini or local estimator
   const handleParseFoodText = async (text: string, category: MealCategory) => {
     setIsParsing(true);
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+
       const res = await fetch('/api/parse-food', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text, category }),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
-      if (!res.ok) throw new Error('Parsing failed');
-      const data = await res.json();
-      if (Array.isArray(data.items) && data.items.length > 0) {
-        const updated = [...items, ...data.items];
-        setItems(updated);
-        showToast(`Parsed & added ${data.items.length} item(s)`);
-        runAnalysis(updated, goals);
+      const contentType = res.headers.get('content-type') || '';
+      if (res.ok && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (Array.isArray(data.items) && data.items.length > 0) {
+          const updated = [...items, ...data.items];
+          setItems(updated);
+          setAnalysis(analyzeConsumptionLocally(updated, goals));
+          showToast(`Parsed & added ${data.items.length} item(s)`);
+          runAnalysis(updated, goals);
+          return;
+        }
       }
+      throw new Error('API parsing response not usable');
     } catch (err) {
-      console.error(err);
+      console.warn('Using intelligent client-side nutritional fallback:', err);
       // Fallback manual item
       const fallback: FoodItem = {
         id: `food-${Date.now()}`,
-        name: text,
+        name: text.trim(),
         category,
-        portion: '1 serving',
-        calories: 380,
-        protein: 16,
+        portion: '1 standard portion',
+        calories: 390,
+        protein: 18,
         carbs: 45,
-        fat: 14,
+        fat: 15,
         fiber: 4,
         sodium: 480,
-        sugar: 8,
-        healthTags: ['Self-Logged'],
+        sugar: 7,
+        healthTags: ['Logged'],
       };
       const updated = [...items, fallback];
       setItems(updated);
+      setAnalysis(analyzeConsumptionLocally(updated, goals));
+      showToast(`Logged "${text.trim()}"`);
       runAnalysis(updated, goals);
     } finally {
       setIsParsing(false);
@@ -205,6 +256,9 @@ export default function App() {
     const newGoal = GOAL_PRESETS[sample.goal] || goals;
     setGoals(newGoal);
     setItems(sample.items);
+    // Instant local analysis update so UI immediately populates on Vercel
+    const immediateAnalysis = analyzeConsumptionLocally(sample.items, newGoal);
+    setAnalysis(immediateAnalysis);
     showToast(`Loaded "${sample.name}"`);
     runAnalysis(sample.items, newGoal);
   };
@@ -221,6 +275,7 @@ export default function App() {
   // Save updated goals
   const handleSaveGoal = (updatedGoal: NutritionalGoals) => {
     setGoals(updatedGoal);
+    setAnalysis(analyzeConsumptionLocally(items, updatedGoal));
     showToast(`Nutritional goal updated to ${updatedGoal.goalName}`);
     runAnalysis(items, updatedGoal);
   };

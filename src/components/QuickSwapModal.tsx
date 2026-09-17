@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Sparkles, ArrowRight, Check, RefreshCw, ChefHat, Heart } from 'lucide-react';
 import { FoodItem, HealthierAlternative, NutritionalGoals } from '../types';
+import { generateAlternativeForItem } from '../utils/nutritionEngine';
 
 interface QuickSwapModalProps {
   isOpen: boolean;
@@ -38,12 +39,21 @@ export const QuickSwapModal: React.FC<QuickSwapModalProps> = ({
         }),
       });
 
-      if (!res.ok) throw new Error('Failed to generate swap');
-      const data = await res.json();
-      setGeneratedAlt(data.alternative);
+      const contentType = res.headers.get('content-type') || '';
+      if (res.ok && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (data.alternative) {
+          setGeneratedAlt(data.alternative);
+          return;
+        }
+      }
+      // If server returned non-OK or non-JSON, fallback immediately
+      const fallbackAlt = generateAlternativeForItem(item, goals);
+      setGeneratedAlt(fallbackAlt);
     } catch (err: any) {
-      console.error(err);
-      setError('Could not generate alternative. Please try again.');
+      console.warn('Network or API issue in quick swap, using local culinary swap:', err);
+      const fallbackAlt = generateAlternativeForItem(item, goals);
+      setGeneratedAlt(fallbackAlt);
     } finally {
       setLoading(false);
     }
