@@ -1,6 +1,7 @@
 import React from 'react';
 import { Sparkles, RotateCcw } from 'lucide-react';
 import { DailyAnalysis, NutritionalGoals } from '../types';
+import { formatNum, sub2 } from '../utils/formatters';
 
 interface AnalysisOverviewProps {
   analysis: DailyAnalysis | null;
@@ -82,7 +83,7 @@ export const AnalysisOverview: React.FC<AnalysisOverviewProps> = ({
               {!isOverCal && !isOverSodium && !isOverSugar
                 ? 'All clear! Your daily intake is currently below your target limit.'
                 : isOverCal
-                ? `${totals.calories - goals.targetCalories} kcal over daily target limit.`
+                ? `${formatNum(sub2(totals.calories, goals.targetCalories))} kcal over daily target limit.`
                 : 'Intake exceeds sodium or sugar limits.'}
             </p>
           </div>
@@ -107,14 +108,14 @@ export const AnalysisOverview: React.FC<AnalysisOverviewProps> = ({
         >
           <div className="text-[10px] font-bold uppercase text-stone-400">Calories</div>
           <div className="text-sm font-bold text-stone-900">
-            {totals.calories}{' '}
+            {formatNum(totals.calories)}{' '}
             <span className="text-[11px] font-normal text-stone-500">
-              / {goals.targetCalories}
+              / {formatNum(goals.targetCalories)}
             </span>
           </div>
           <div className="text-[10px] font-bold mt-0.5">
             {isOverCal ? (
-              <span className="text-amber-700">+{totals.calories - goals.targetCalories} over</span>
+              <span className="text-amber-700">+{formatNum(sub2(totals.calories, goals.targetCalories))} over</span>
             ) : (
               <span className="text-emerald-700">✓ In Target</span>
             )}
@@ -125,16 +126,16 @@ export const AnalysisOverview: React.FC<AnalysisOverviewProps> = ({
         <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200/70 text-center">
           <div className="text-[10px] font-bold uppercase text-stone-400">Protein</div>
           <div className="text-sm font-bold text-stone-900">
-            {totals.protein}g{' '}
+            {formatNum(totals.protein)}g{' '}
             <span className="text-[11px] font-normal text-stone-500">
-              / {goals.targetProtein}g
+              / {formatNum(goals.targetProtein)}g
             </span>
           </div>
           <div className="text-[10px] font-bold mt-0.5">
             {totals.protein >= goals.targetProtein ? (
               <span className="text-emerald-700">✓ Goal Met</span>
             ) : (
-              <span className="text-stone-500">{goals.targetProtein - totals.protein}g to goal</span>
+              <span className="text-stone-500">{formatNum(sub2(goals.targetProtein, totals.protein))}g to goal</span>
             )}
           </div>
         </div>
@@ -147,9 +148,9 @@ export const AnalysisOverview: React.FC<AnalysisOverviewProps> = ({
         >
           <div className="text-[10px] font-bold uppercase text-stone-400">Sodium</div>
           <div className="text-sm font-bold text-stone-900">
-            {totals.sodium}mg{' '}
+            {formatNum(totals.sodium)}mg{' '}
             <span className="text-[11px] font-normal text-stone-500">
-              / {goals.maxSodium}mg
+              / {formatNum(goals.maxSodium)}mg
             </span>
           </div>
           <div className="text-[10px] font-bold mt-0.5">
@@ -169,9 +170,9 @@ export const AnalysisOverview: React.FC<AnalysisOverviewProps> = ({
         >
           <div className="text-[10px] font-bold uppercase text-stone-400">Sugar</div>
           <div className="text-sm font-bold text-stone-900">
-            {totals.sugar}g{' '}
+            {formatNum(totals.sugar)}g{' '}
             <span className="text-[11px] font-normal text-stone-500">
-              / {goals.maxSugar}g
+              / {formatNum(goals.maxSugar)}g
             </span>
           </div>
           <div className="text-[10px] font-bold mt-0.5">

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Sparkles, ArrowRight, Check, RefreshCw, ChefHat, Heart } from 'lucide-react';
 import { FoodItem, HealthierAlternative, NutritionalGoals } from '../types';
 import { generateAlternativeForItem } from '../utils/nutritionEngine';
+import { formatNum } from '../utils/formatters';
 
 interface QuickSwapModalProps {
   isOpen: boolean;
@@ -98,17 +99,17 @@ export const QuickSwapModal: React.FC<QuickSwapModalProps> = ({
           </div>
           <div className="flex flex-wrap items-center gap-2 text-stone-700">
             <span className="font-bold text-stone-900 bg-white px-2 py-0.5 rounded border border-stone-200">
-              {item.calories} kcal
+              {formatNum(item.calories)} kcal
             </span>
-            <span>{item.protein}g Protein</span>
+            <span>{formatNum(item.protein)}g Protein</span>
             <span>•</span>
-            <span>{item.carbs}g Carbs</span>
+            <span>{formatNum(item.carbs)}g Carbs</span>
             <span>•</span>
-            <span>{item.fat}g Fat</span>
+            <span>{formatNum(item.fat)}g Fat</span>
             <span>•</span>
-            <span>{item.sodium}mg Sodium</span>
+            <span>{formatNum(item.sodium)}mg Sodium</span>
             <span>•</span>
-            <span>{item.sugar}g Sugar</span>
+            <span>{formatNum(item.sugar)}g Sugar</span>
           </div>
         </div>
 
@@ -180,10 +181,10 @@ export const QuickSwapModal: React.FC<QuickSwapModalProps> = ({
               </div>
               <div className="text-right">
                 <span className="text-base font-extrabold text-emerald-950">
-                  {generatedAlt.calories} kcal
+                  {formatNum(generatedAlt.calories)} kcal
                 </span>
                 <div className="text-[10px] text-emerald-800 font-semibold">
-                  -{generatedAlt.savings.calories} kcal saved
+                  -{formatNum(generatedAlt.savings.calories)} kcal saved
                 </div>
               </div>
             </div>
@@ -192,19 +193,19 @@ export const QuickSwapModal: React.FC<QuickSwapModalProps> = ({
             <div className="grid grid-cols-4 gap-1.5 text-center text-[11px] font-medium text-stone-700 bg-white p-2 rounded-xl border border-emerald-200/80">
               <div>
                 <div className="text-stone-400 text-[9px] uppercase">Protein</div>
-                <div className="font-bold text-emerald-900">{generatedAlt.protein}g</div>
+                <div className="font-bold text-emerald-900">{formatNum(generatedAlt.protein)}g</div>
               </div>
               <div>
                 <div className="text-stone-400 text-[9px] uppercase">Carbs</div>
-                <div className="font-bold text-emerald-900">{generatedAlt.carbs}g</div>
+                <div className="font-bold text-emerald-900">{formatNum(generatedAlt.carbs)}g</div>
               </div>
               <div>
                 <div className="text-stone-400 text-[9px] uppercase">Fat</div>
-                <div className="font-bold text-emerald-900">{generatedAlt.fat}g</div>
+                <div className="font-bold text-emerald-900">{formatNum(generatedAlt.fat)}g</div>
               </div>
               <div>
                 <div className="text-stone-400 text-[9px] uppercase">Sodium</div>
-                <div className="font-bold text-emerald-900">{generatedAlt.sodium}mg</div>
+                <div className="font-bold text-emerald-900">{formatNum(generatedAlt.sodium)}mg</div>
               </div>
             </div>
 

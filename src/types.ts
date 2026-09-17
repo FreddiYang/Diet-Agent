@@ -1,10 +1,45 @@
 export type MealCategory = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
+export type IngredientAisle = 
+  | 'grains' 
+  | 'proteins' 
+  | 'dairy' 
+  | 'produce' 
+  | 'veggies' 
+  | 'fats-oils' 
+  | 'beverages' 
+  | 'snacks-condiments';
+
+export interface Ingredient {
+  id: string;
+  name: string;
+  icon: string;
+  aisle: IngredientAisle;
+  suggestedGrams: number;
+  suggestedUnit: string; // e.g. "1 slice", "1 egg", "1 medium", "1 cup (240ml)", "1 tbsp"
+  per100g: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    fiber: number;
+    sodium: number;
+    sugar: number;
+  };
+  defaultMeal?: MealCategory;
+  healthTags?: string[];
+  isUnhealthyOrComfort?: boolean;
+  swapAlternativeId?: string;
+  swapReason?: string;
+}
+
 export interface FoodItem {
   id: string;
   name: string;
   category: MealCategory;
   portion: string;
+  weightGrams?: number;
+  ingredientId?: string;
   calories: number;
   protein: number; // in grams
   carbs: number;   // in grams

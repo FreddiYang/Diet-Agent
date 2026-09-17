@@ -1,6 +1,8 @@
 import React from 'react';
 import { Flame, Beef, Wheat, Droplets, Leaf, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { FoodItem, NutritionalGoals } from '../types';
+import { calculateTotals } from '../utils/nutritionEngine';
+import { formatNum, roundToTwo, sub2 } from '../utils/formatters';
 
 interface DailySummaryBarProps {
   items: FoodItem[];
@@ -8,18 +10,7 @@ interface DailySummaryBarProps {
 }
 
 export const DailySummaryBar: React.FC<DailySummaryBarProps> = ({ items, goals }) => {
-  const totals = items.reduce(
-    (acc, item) => ({
-      calories: acc.calories + (Number(item.calories) || 0),
-      protein: acc.protein + (Number(item.protein) || 0),
-      carbs: acc.carbs + (Number(item.carbs) || 0),
-      fat: acc.fat + (Number(item.fat) || 0),
-      fiber: acc.fiber + (Number(item.fiber) || 0),
-      sodium: acc.sodium + (Number(item.sodium) || 0),
-      sugar: acc.sugar + (Number(item.sugar) || 0),
-    }),
-    { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sodium: 0, sugar: 0 }
-  );
+  const totals = calculateTotals(items);
 
   const calPct = goals.targetCalories > 0 ? Math.min(100, Math.round((totals.calories / goals.targetCalories) * 100)) : 0;
   const proteinPct = goals.targetProtein > 0 ? Math.min(100, Math.round((totals.protein / goals.targetProtein) * 100)) : 0;
@@ -29,7 +20,7 @@ export const DailySummaryBar: React.FC<DailySummaryBarProps> = ({ items, goals }
 
   const isSodiumExcess = goals.maxSodium > 0 && totals.sodium > goals.maxSodium;
   const isSugarExcess = goals.maxSugar > 0 && totals.sugar > goals.maxSugar;
-  const calDiff = totals.calories - goals.targetCalories;
+  const calDiff = sub2(totals.calories, goals.targetCalories);
 
   return (
     <div className="bg-white rounded-2xl border border-stone-200/90 p-4 sm:p-5 shadow-xs">
@@ -53,7 +44,7 @@ export const DailySummaryBar: React.FC<DailySummaryBarProps> = ({ items, goals }
           <div className="text-right">
             <div className="text-xs text-stone-500 font-medium">Daily Energy Intake</div>
             <div className="text-base font-extrabold text-stone-900">
-              {totals.calories} <span className="text-xs font-normal text-stone-400">/ {goals.targetCalories} kcal</span>
+              {formatNum(totals.calories)} <span className="text-xs font-normal text-stone-400">/ {formatNum(goals.targetCalories)} kcal</span>
             </div>
           </div>
           <div className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 ${
@@ -63,7 +54,7 @@ export const DailySummaryBar: React.FC<DailySummaryBarProps> = ({ items, goals }
               ? 'bg-amber-50 text-amber-700 border border-amber-200'
               : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
           }`}>
-            {calDiff > 0 ? `+${calDiff} kcal over` : `${Math.abs(calDiff)} kcal remaining`}
+            {calDiff > 0 ? `+${formatNum(calDiff)} kcal over` : `${formatNum(Math.abs(calDiff))} kcal remaining`}
           </div>
         </div>
       </div>
@@ -80,7 +71,7 @@ export const DailySummaryBar: React.FC<DailySummaryBarProps> = ({ items, goals }
             <span className="text-[11px] font-bold text-stone-500">{proteinPct}%</span>
           </div>
           <div className="text-lg font-bold text-stone-900 leading-tight">
-            {totals.protein}g <span className="text-xs font-normal text-stone-400">/ {goals.targetProtein}g</span>
+            {formatNum(totals.protein)}g <span className="text-xs font-normal text-stone-400">/ {formatNum(goals.targetProtein)}g</span>
           </div>
           <div className="w-full bg-stone-200 rounded-full h-1.5 mt-2 overflow-hidden">
             <div
@@ -100,7 +91,7 @@ export const DailySummaryBar: React.FC<DailySummaryBarProps> = ({ items, goals }
             <span className="text-[11px] font-bold text-stone-500">{carbsPct}%</span>
           </div>
           <div className="text-lg font-bold text-stone-900 leading-tight">
-            {totals.carbs}g <span className="text-xs font-normal text-stone-400">/ {goals.targetCarbs}g</span>
+            {formatNum(totals.carbs)}g <span className="text-xs font-normal text-stone-400">/ {formatNum(goals.targetCarbs)}g</span>
           </div>
           <div className="w-full bg-stone-200 rounded-full h-1.5 mt-2 overflow-hidden">
             <div
@@ -120,7 +111,7 @@ export const DailySummaryBar: React.FC<DailySummaryBarProps> = ({ items, goals }
             <span className="text-[11px] font-bold text-stone-500">{fatPct}%</span>
           </div>
           <div className="text-lg font-bold text-stone-900 leading-tight">
-            {totals.fat}g <span className="text-xs font-normal text-stone-400">/ {goals.targetFat}g</span>
+            {formatNum(totals.fat)}g <span className="text-xs font-normal text-stone-400">/ {formatNum(goals.targetFat)}g</span>
           </div>
           <div className="w-full bg-stone-200 rounded-full h-1.5 mt-2 overflow-hidden">
             <div
@@ -140,7 +131,7 @@ export const DailySummaryBar: React.FC<DailySummaryBarProps> = ({ items, goals }
             <span className="text-[11px] font-bold text-stone-500">{fiberPct}%</span>
           </div>
           <div className="text-lg font-bold text-stone-900 leading-tight">
-            {totals.fiber}g <span className="text-xs font-normal text-stone-400">/ {goals.targetFiber}g min</span>
+            {formatNum(totals.fiber)}g <span className="text-xs font-normal text-stone-400">/ {formatNum(goals.targetFiber)}g min</span>
           </div>
           <div className="w-full bg-stone-200 rounded-full h-1.5 mt-2 overflow-hidden">
             <div
@@ -171,10 +162,10 @@ export const DailySummaryBar: React.FC<DailySummaryBarProps> = ({ items, goals }
             )}
           </div>
           <div className="text-lg font-bold text-stone-900 leading-tight">
-            {totals.sodium} <span className="text-xs font-normal text-stone-500">/ {goals.maxSodium} mg</span>
+            {formatNum(totals.sodium)} <span className="text-xs font-normal text-stone-500">/ {formatNum(goals.maxSodium)} mg</span>
           </div>
           <div className="text-[11px] text-stone-500 mt-1">
-            {isSodiumExcess ? `${totals.sodium - goals.maxSodium}mg over ceiling` : 'Within safe target'}
+            {isSodiumExcess ? `${formatNum(sub2(totals.sodium, goals.maxSodium))}mg over ceiling` : 'Within safe target'}
           </div>
         </div>
 
@@ -197,10 +188,10 @@ export const DailySummaryBar: React.FC<DailySummaryBarProps> = ({ items, goals }
             )}
           </div>
           <div className="text-lg font-bold text-stone-900 leading-tight">
-            {totals.sugar}g <span className="text-xs font-normal text-stone-500">/ {goals.maxSugar}g max</span>
+            {formatNum(totals.sugar)}g <span className="text-xs font-normal text-stone-500">/ {formatNum(goals.maxSugar)}g max</span>
           </div>
           <div className="text-[11px] text-stone-500 mt-1">
-            {isSugarExcess ? `${totals.sugar - goals.maxSugar}g over limit` : 'Moderate levels'}
+            {isSugarExcess ? `${formatNum(sub2(totals.sugar, goals.maxSugar))}g over limit` : 'Moderate levels'}
           </div>
         </div>
       </div>

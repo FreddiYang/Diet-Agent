@@ -1,4 +1,5 @@
 import { FoodItem, GoalPresetType, NutritionalGoals } from '../types';
+import { INGREDIENTS_DATABASE, calculateIngredientNutrition } from './foodDatabase';
 
 export const GOAL_PRESETS: Record<GoalPresetType, NutritionalGoals> = {
   'weight-loss': {
@@ -94,228 +95,110 @@ export const GOAL_PRESETS: Record<GoalPresetType, NutritionalGoals> = {
   }
 };
 
+// Helper to construct a FoodItem from the Ingredient Database by ID and weight in grams
+function createIngredientFoodItem(
+  ingredientId: string,
+  weightGrams: number,
+  category: 'breakfast' | 'lunch' | 'dinner' | 'snack',
+  customUnitNote?: string
+): FoodItem {
+  const ing = INGREDIENTS_DATABASE.find((i) => i.id === ingredientId);
+  if (!ing) {
+    throw new Error(`Ingredient ${ingredientId} not found in database`);
+  }
+  const nut = calculateIngredientNutrition(ing, weightGrams);
+  return {
+    id: `sample-${ingredientId}-${Math.random().toString(36).substring(2, 7)}`,
+    ingredientId: ing.id,
+    name: ing.name,
+    icon: ing.icon,
+    category,
+    weightGrams,
+    portion: customUnitNote ? `${weightGrams}g (${customUnitNote})` : nut.portion,
+    calories: nut.calories,
+    protein: nut.protein,
+    carbs: nut.carbs,
+    fat: nut.fat,
+    fiber: nut.fiber,
+    sodium: nut.sodium,
+    sugar: nut.sugar,
+    healthTags: ing.healthTags,
+  };
+}
+
 export const SAMPLE_DAYS: { name: string; description: string; goal: GoalPresetType; items: FoodItem[] }[] = [
   {
-    name: 'Typical Fast-Food & Takeout Day',
-    description: 'High sodium, refined sugars, saturated fat, and ultra-processed takeout items ready for dramatic healthier swaps.',
+    name: 'High Sodium & Sugar Takeout Staples',
+    description: 'Composed of real ingredients: deli bagel, bacon, french fries, ground chuck, mayo, and soda ready for smart healthy swaps.',
     goal: 'weight-loss',
     items: [
-      {
-        id: 'sample-1',
-        name: 'Bacon, Egg & Cheddar Breakfast Bagel',
-        icon: '🥯',
-        category: 'breakfast',
-        portion: '1 large sandwich',
-        calories: 590,
-        protein: 24,
-        carbs: 56,
-        fat: 30,
-        fiber: 2,
-        sodium: 1280,
-        sugar: 6,
-        healthTags: ['Ultra-Processed', 'High Sodium', 'Saturated Fat']
-      },
-      {
-        id: 'sample-2',
-        name: 'Iced Caramel Macchiato with Whole Milk',
-        icon: '☕',
-        category: 'breakfast',
-        portion: '16 oz (Grande)',
-        calories: 250,
-        protein: 7,
-        carbs: 34,
-        fat: 9,
-        fiber: 0,
-        sodium: 150,
-        sugar: 32,
-        healthTags: ['High Added Sugar']
-      },
-      {
-        id: 'sample-3',
-        name: 'Double Cheeseburger with Large Fries',
-        icon: '🍔',
-        category: 'lunch',
-        portion: '1 combo meal',
-        calories: 960,
-        protein: 34,
-        carbs: 98,
-        fat: 48,
-        fiber: 5,
-        sodium: 1540,
-        sugar: 8,
-        healthTags: ['Ultra-Processed', 'High Sodium', 'Trans/Sat Fat']
-      },
-      {
-        id: 'sample-4',
-        name: 'Regular 20oz Cola',
-        icon: '🥤',
-        category: 'lunch',
-        portion: '20 oz bottle',
-        calories: 240,
-        protein: 0,
-        carbs: 65,
-        fat: 0,
-        fiber: 0,
-        sodium: 75,
-        sugar: 65,
-        healthTags: ['High Added Sugar', 'Empty Calories']
-      },
-      {
-        id: 'sample-5',
-        name: 'Nacho Cheese Tortilla Chips with Queso Dip',
-        icon: '🍟',
-        category: 'snack',
-        portion: '1 bag + 3 tbsp dip',
-        calories: 340,
-        protein: 5,
-        carbs: 36,
-        fat: 20,
-        fiber: 2,
-        sodium: 580,
-        sugar: 2,
-        healthTags: ['Ultra-Processed', 'High Sodium']
-      },
-      {
-        id: 'sample-6',
-        name: '2 Slices Pepperoni Stuffed Crust Pizza',
-        icon: '🍕',
-        category: 'dinner',
-        portion: '2 slices (large pizza)',
-        calories: 760,
-        protein: 30,
-        carbs: 72,
-        fat: 38,
-        fiber: 3,
-        sodium: 1680,
-        sugar: 7,
-        healthTags: ['High Sodium', 'Refined Flour', 'High Saturated Fat']
-      }
+      createIngredientFoodItem('ing-white-bagel', 85, 'breakfast', '1 deli bagel'),
+      createIngredientFoodItem('ing-pork-bacon', 30, 'breakfast', '2 strips'),
+      createIngredientFoodItem('ing-cheddar-cheese', 28, 'breakfast', '1 slice'),
+      createIngredientFoodItem('ing-white-sugar', 24, 'breakfast', '2 tbsp in coffee'),
+      createIngredientFoodItem('ing-whole-milk', 240, 'breakfast', '1 cup'),
+      createIngredientFoodItem('ing-brewed-coffee', 240, 'breakfast', '1 cup'),
+
+      createIngredientFoodItem('ing-white-bread', 70, 'lunch', '2 slices bun'),
+      createIngredientFoodItem('ing-ground-beef-8020', 120, 'lunch', '1 burger patty'),
+      createIngredientFoodItem('ing-mayonnaise', 15, 'lunch', '1 tbsp spread'),
+      createIngredientFoodItem('ing-french-fries', 100, 'lunch', '1 medium order'),
+      createIngredientFoodItem('ing-regular-cola', 355, 'lunch', '1 can (12 oz)'),
+
+      createIngredientFoodItem('ing-potato-chips', 28, 'snack', '1 small bag'),
+      createIngredientFoodItem('ing-milk-chocolate', 40, 'snack', '1 candy bar'),
+
+      createIngredientFoodItem('ing-white-bread', 70, 'dinner', '2 slices thick toast'),
+      createIngredientFoodItem('ing-pepperoni', 35, 'dinner', '10 slices'),
+      createIngredientFoodItem('ing-cheddar-cheese', 50, 'dinner', 'shredded topping'),
     ]
   },
   {
-    name: 'Desk-Worker Convenience Day',
-    description: 'Pastries, deli sub, sweetened iced tea, and commercial frozen lasagna with moderate protein deficit.',
+    name: 'Convenience Staples & Refined Carbs',
+    description: 'White bread, sandwich cuts, sweetened iced tea, and butter with lower protein and fiber ratios.',
     goal: 'blood-sugar',
     items: [
-      {
-        id: 'desk-1',
-        name: 'Blueberry Muffin & Vanilla Latte',
-        category: 'breakfast',
-        portion: '1 bakery muffin + 12oz latte',
-        calories: 610,
-        protein: 11,
-        carbs: 88,
-        fat: 24,
-        fiber: 2,
-        sodium: 480,
-        sugar: 52,
-        healthTags: ['High Added Sugar', 'Refined Carbs']
-      },
-      {
-        id: 'desk-2',
-        name: 'Footlong Italian Deli Cold Cut Sub with Mayo & Chips',
-        category: 'lunch',
-        portion: '1 sub + 1 small bag potato chips',
-        calories: 990,
-        protein: 38,
-        carbs: 96,
-        fat: 49,
-        fiber: 4,
-        sodium: 2650,
-        sugar: 11,
-        healthTags: ['Ultra-Processed', 'Excess Sodium', 'Processed Meats']
-      },
-      {
-        id: 'desk-3',
-        name: 'Sweetened Green Tea Bottle & Chocolate Chip Cookie',
-        category: 'snack',
-        portion: '1 bottle + 1 bakery cookie',
-        calories: 380,
-        protein: 4,
-        carbs: 62,
-        fat: 14,
-        fiber: 1,
-        sodium: 220,
-        sugar: 44,
-        healthTags: ['High Added Sugar']
-      },
-      {
-        id: 'desk-4',
-        name: 'Frozen Meat Lasagna with Garlic Bread Slices',
-        category: 'dinner',
-        portion: '1 tray + 2 slices bread',
-        calories: 780,
-        protein: 28,
-        carbs: 82,
-        fat: 37,
-        fiber: 4,
-        sodium: 1820,
-        sugar: 12,
-        healthTags: ['High Sodium', 'High Saturated Fat']
-      }
+      createIngredientFoodItem('ing-white-bread', 70, 'breakfast', '2 slices toast'),
+      createIngredientFoodItem('ing-unsalted-butter', 14, 'breakfast', '1 tbsp'),
+      createIngredientFoodItem('ing-white-sugar', 12, 'breakfast', '1 tbsp in coffee'),
+      createIngredientFoodItem('ing-brewed-coffee', 240, 'breakfast', '1 cup'),
+
+      createIngredientFoodItem('ing-white-bread', 70, 'lunch', '2 slices bread'),
+      createIngredientFoodItem('ing-deli-turkey', 60, 'lunch', '3 slices'),
+      createIngredientFoodItem('ing-mayonnaise', 15, 'lunch', '1 tbsp'),
+      createIngredientFoodItem('ing-potato-chips', 28, 'lunch', '1 small bag'),
+      createIngredientFoodItem('ing-sweetened-iced-tea', 355, 'lunch', '1 bottle'),
+
+      createIngredientFoodItem('ing-milk-chocolate', 40, 'snack', '1 treat'),
+
+      createIngredientFoodItem('ing-white-pasta', 140, 'dinner', '1 cup cooked'),
+      createIngredientFoodItem('ing-ground-beef-8020', 120, 'dinner', '4 oz beef'),
+      createIngredientFoodItem('ing-cheddar-cheese', 28, 'dinner', '1 slice melted'),
     ]
   },
   {
-    name: 'Balanced Clean Day (High Compliance)',
-    description: 'High fiber, lean protein, healthy omega fats, and low sodium baseline.',
+    name: 'Balanced Clean Whole-Ingredient Day',
+    description: 'Whole wheat bread, eggs, banana, chicken, brown rice, broccoli, olive oil, Greek yogurt, berries, and salmon.',
     goal: 'clean-eating',
     items: [
-      {
-        id: 'clean-1',
-        name: 'Rolled Oats with Greek Yogurt, Blueberries & Chia Seeds',
-        category: 'breakfast',
-        portion: '1 bowl (45g oats, 150g yogurt, 50g berries)',
-        calories: 380,
-        protein: 26,
-        carbs: 48,
-        fat: 9,
-        fiber: 9,
-        sodium: 85,
-        sugar: 12,
-        healthTags: ['High Fiber', 'Lean Protein', 'Antioxidants']
-      },
-      {
-        id: 'clean-2',
-        name: 'Grilled Salmon Quinoa Salad with Olive Oil & Lemon',
-        category: 'lunch',
-        portion: '150g salmon, 1 cup quinoa, mixed greens',
-        calories: 520,
-        protein: 38,
-        carbs: 42,
-        fat: 20,
-        fiber: 7,
-        sodium: 320,
-        sugar: 3,
-        healthTags: ['Omega-3', 'Lean Protein', 'Whole Grains']
-      },
-      {
-        id: 'clean-3',
-        name: 'Apple Slices with 1 tbsp Natural Almond Butter',
-        category: 'snack',
-        portion: '1 honeycrisp apple + 16g almond butter',
-        calories: 190,
-        protein: 4,
-        carbs: 27,
-        fat: 9,
-        fiber: 5,
-        sodium: 5,
-        sugar: 19,
-        healthTags: ['Natural Whole Food', 'High Fiber']
-      },
-      {
-        id: 'clean-4',
-        name: 'Herb-Roasted Chicken Breast with Sweet Potato & Steamed Broccoli',
-        category: 'dinner',
-        portion: '180g chicken, 1 medium sweet potato, 1 cup broccoli',
-        calories: 490,
-        protein: 46,
-        carbs: 44,
-        fat: 12,
-        fiber: 8,
-        sodium: 380,
-        sugar: 8,
-        healthTags: ['Lean Protein', 'Micronutrient Dense', 'Low Sodium']
-      }
+      createIngredientFoodItem('ing-whole-wheat-bread', 35, 'breakfast', '1 slice'),
+      createIngredientFoodItem('ing-large-egg', 100, 'breakfast', '2 eggs'),
+      createIngredientFoodItem('ing-banana', 118, 'breakfast', '1 medium banana'),
+      createIngredientFoodItem('ing-brewed-coffee', 240, 'breakfast', '1 cup black'),
+
+      createIngredientFoodItem('ing-chicken-breast', 140, 'lunch', '1 fillet'),
+      createIngredientFoodItem('ing-brown-rice', 150, 'lunch', '1 cup cooked'),
+      createIngredientFoodItem('ing-broccoli-florets', 85, 'lunch', '1 cup steamed'),
+      createIngredientFoodItem('ing-extra-virgin-olive-oil', 14, 'lunch', '1 tbsp dressing'),
+
+      createIngredientFoodItem('ing-greek-yogurt-0', 150, 'snack', '1 tub nonfat'),
+      createIngredientFoodItem('ing-blueberries', 80, 'snack', '1/2 cup fresh'),
+      createIngredientFoodItem('ing-raw-almonds', 28, 'snack', '1 oz nuts'),
+
+      createIngredientFoodItem('ing-atlantic-salmon', 140, 'dinner', '1 fillet'),
+      createIngredientFoodItem('ing-sweet-potato', 130, 'dinner', '1 medium baked'),
+      createIngredientFoodItem('ing-asparagus-spears', 90, 'dinner', '6 spears'),
+      createIngredientFoodItem('ing-extra-virgin-olive-oil', 10, 'dinner', 'drizzled on greens'),
     ]
   }
 ];

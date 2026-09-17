@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Sparkles, ArrowDown, Check, RefreshCw, Heart } from 'lucide-react';
 import { HealthierAlternative, FoodItem } from '../types';
+import { formatNum, roundToTwo } from '../utils/formatters';
 
 interface HealthierSwapsListProps {
   alternatives: HealthierAlternative[];
@@ -29,7 +30,7 @@ export const HealthierSwapsList: React.FC<HealthierSwapsListProps> = ({
         </div>
         <h4 className="text-sm font-bold text-stone-900">No Food Swaps Required</h4>
         <p className="text-xs text-stone-500 max-w-sm mx-auto mt-0.5">
-          Your daily food log is currently within your healthy intake limits.
+          Your daily food log is already at or below your target calories. No further calorie-reducing swaps are needed.
         </p>
       </div>
     );
@@ -46,7 +47,7 @@ export const HealthierSwapsList: React.FC<HealthierSwapsListProps> = ({
           </span>
         </div>
         <span className="text-[11px] text-stone-400 hidden sm:inline shrink-0">
-          From Graphic Database
+          Calibrated to Target Calories
         </span>
       </div>
 
@@ -83,7 +84,7 @@ export const HealthierSwapsList: React.FC<HealthierSwapsListProps> = ({
                       </div>
                       <div className="text-[11px] text-stone-500 truncate">
                         <span className="font-semibold text-stone-700">
-                          {originalItem?.calories ?? alt.calories + alt.savings.calories} kcal
+                          {formatNum(roundToTwo(originalItem?.calories ?? (alt.calories + alt.savings.calories)))} kcal
                         </span>
                         {originalItem?.portion ? ` · ${originalItem.portion}` : ''}
                       </div>
@@ -102,7 +103,7 @@ export const HealthierSwapsList: React.FC<HealthierSwapsListProps> = ({
                   </div>
                   {alt.savings.calories > 0 && (
                     <span className="font-bold text-emerald-900 bg-emerald-100/90 border border-emerald-200/60 px-2 py-0.5 rounded-full text-[10px]">
-                      Saves {alt.savings.calories} kcal
+                      Saves {formatNum(alt.savings.calories)} kcal
                     </span>
                   )}
                 </div>
@@ -120,7 +121,7 @@ export const HealthierSwapsList: React.FC<HealthierSwapsListProps> = ({
                         </span>
                         {alt.savings.sodium > 0 && (
                           <span className="text-[10px] font-semibold text-emerald-700">
-                            · -{alt.savings.sodium}mg sodium
+                            · -{formatNum(alt.savings.sodium)}mg sodium
                           </span>
                         )}
                       </div>
@@ -128,7 +129,7 @@ export const HealthierSwapsList: React.FC<HealthierSwapsListProps> = ({
                         {alt.suggestedItemName}
                       </div>
                       <div className="text-[11px] text-emerald-800 truncate">
-                        <span className="font-semibold">{alt.calories} kcal</span> · {alt.portion}
+                        <span className="font-semibold">{formatNum(alt.calories)} kcal</span> · {alt.portion}
                       </div>
                     </div>
                   </div>

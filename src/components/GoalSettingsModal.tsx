@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Target, Check, Info, ShieldCheck, Heart, Dumbbell, Activity, Sparkles } from 'lucide-react';
 import { GoalPresetType, NutritionalGoals } from '../types';
 import { GOAL_PRESETS } from '../data/presets';
+import { formatNum } from '../utils/formatters';
 
 interface GoalSettingsModalProps {
   isOpen: boolean;
@@ -118,7 +119,7 @@ export const GoalSettingsModal: React.FC<GoalSettingsModalProps> = ({
                         {preset.goalName}
                       </div>
                       <div className="text-[11px] text-stone-500">
-                        {preset.targetCalories} kcal
+                        {formatNum(preset.targetCalories)} kcal
                       </div>
                     </div>
                   </button>

@@ -161,6 +161,14 @@ export default function App() {
     runAnalysis(updated, goals);
   };
 
+  // Update Item handler (e.g. weight adjustment in grams)
+  const handleUpdateItem = (updatedItem: FoodItem) => {
+    const updated = items.map(i => (i.id === updatedItem.id ? updatedItem : i));
+    setItems(updated);
+    setAnalysis(analyzeConsumptionLocally(updated, goals));
+    runAnalysis(updated, goals);
+  };
+
   // 1-Click Apply Healthier Swap handler
   const handleApplySwap = (alt: HealthierAlternative) => {
     const targetOriginal = items.find(i => i.id === alt.originalFoodId);
@@ -342,6 +350,7 @@ export default function App() {
             <FoodLogSection
               items={items}
               onAddItem={handleAddItem}
+              onUpdateItem={handleUpdateItem}
               onDeleteItem={handleDeleteItem}
               onRequestSwap={(item) => setQuickSwapItem(item)}
               onParseFoodText={handleParseFoodText}

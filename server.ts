@@ -26,17 +26,26 @@ function getGeminiClient(): GoogleGenAI | null {
   });
 }
 
+// Number rounding helpers (limit to two digits behind the '.')
+function round2(n: number): number {
+  return Math.round((Number(n) || 0) * 100) / 100;
+}
+
+function formatNum(n: number): string {
+  return round2(n).toFixed(2);
+}
+
 // Helper: Calculate total macros from food items
 function calculateMacroTotals(items: any[]) {
   return items.reduce(
     (acc, item) => ({
-      calories: Math.round(acc.calories + (Number(item.calories) || 0)),
-      protein: Math.round(acc.protein + (Number(item.protein) || 0)),
-      carbs: Math.round(acc.carbs + (Number(item.carbs) || 0)),
-      fat: Math.round(acc.fat + (Number(item.fat) || 0)),
-      fiber: Math.round(acc.fiber + (Number(item.fiber) || 0)),
-      sodium: Math.round(acc.sodium + (Number(item.sodium) || 0)),
-      sugar: Math.round(acc.sugar + (Number(item.sugar) || 0)),
+      calories: round2(acc.calories + (Number(item.calories) || 0)),
+      protein: round2(acc.protein + (Number(item.protein) || 0)),
+      carbs: round2(acc.carbs + (Number(item.carbs) || 0)),
+      fat: round2(acc.fat + (Number(item.fat) || 0)),
+      fiber: round2(acc.fiber + (Number(item.fiber) || 0)),
+      sodium: round2(acc.sodium + (Number(item.sodium) || 0)),
+      sugar: round2(acc.sugar + (Number(item.sugar) || 0)),
     }),
     { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sodium: 0, sugar: 0 }
   );
@@ -52,56 +61,48 @@ function generateRuleBasedAnalysis(items: any[], goals: any) {
   // Calorie check
   const calRatio = goals.targetCalories > 0 ? totals.calories / goals.targetCalories : 1;
   if (calRatio > 1.15) {
-    areasOfConcern.push(`Total daily intake (${totals.calories} kcal) exceeds your ${goals.goalName} target by ${Math.round(totals.calories - goals.targetCalories)} kcal.`);
+    areasOfConcern.push(`Total daily intake (${formatNum(totals.calories)} kcal) exceeds your ${goals.goalName} target by ${formatNum(round2(totals.calories - goals.targetCalories))} kcal.`);
   } else if (calRatio < 0.8 && totals.calories > 0) {
-    areasOfConcern.push(`Calorie intake is significantly below your goal target (${totals.calories} vs ${goals.targetCalories} kcal). Ensure you are fueling adequately.`);
+    areasOfConcern.push(`Calorie intake is significantly below your goal target (${formatNum(totals.calories)} vs ${formatNum(goals.targetCalories)} kcal). Ensure you are fueling adequately.`);
   } else if (totals.calories > 0) {
-    strengths.push(`Caloric intake (${totals.calories} kcal) is tightly aligned with your target budget (${goals.targetCalories} kcal).`);
+    strengths.push(`Caloric intake (${formatNum(totals.calories)} kcal) is tightly aligned with your target budget (${formatNum(goals.targetCalories)} kcal).`);
   }
 
   // Protein check
   if (totals.protein >= goals.targetProtein * 0.9) {
-    strengths.push(`Excellent protein intake (${totals.protein}g / ${goals.targetProtein}g target), supporting muscle retention and high satiety.`);
+    strengths.push(`Excellent protein intake (${formatNum(totals.protein)}g / ${formatNum(goals.targetProtein)}g target), supporting muscle retention and high satiety.`);
   } else {
-    areasOfConcern.push(`Protein deficit detected (${totals.protein}g vs ${goals.targetProtein}g target). Consider prioritizing lean poultry, egg whites, Greek yogurt, or legumes.`);
+    areasOfConcern.push(`Protein deficit detected (${formatNum(totals.protein)}g vs ${formatNum(goals.targetProtein)}g target). Consider prioritizing lean poultry, egg whites, Greek yogurt, or legumes.`);
   }
 
   // Fiber check
   if (totals.fiber >= goals.targetFiber * 0.85) {
-    strengths.push(`Great dietary fiber level (${totals.fiber}g / ${goals.targetFiber}g target), promoting stable blood glucose and healthy gut microbiome.`);
+    strengths.push(`Great dietary fiber level (${formatNum(totals.fiber)}g / ${formatNum(goals.targetFiber)}g target), promoting stable blood glucose and healthy gut microbiome.`);
   } else {
-    areasOfConcern.push(`Low dietary fiber (${totals.fiber}g vs ${goals.targetFiber}g target). Increasing chia seeds, legumes, berries, and vegetables will boost satiety.`);
+    areasOfConcern.push(`Low dietary fiber (${formatNum(totals.fiber)}g vs ${formatNum(goals.targetFiber)}g target). Increasing chia seeds, legumes, berries, and vegetables will boost satiety.`);
   }
 
   // Sodium check
   if (goals.maxSodium > 0 && totals.sodium > goals.maxSodium) {
-    areasOfConcern.push(`Sodium level (${totals.sodium}mg) exceeds your threshold of ${goals.maxSodium}mg by ${totals.sodium - goals.maxSodium}mg, which may promote fluid retention.`);
+    areasOfConcern.push(`Sodium level (${formatNum(totals.sodium)}mg) exceeds your threshold of ${formatNum(goals.maxSodium)}mg by ${formatNum(round2(totals.sodium - goals.maxSodium))}mg, which may promote fluid retention.`);
   } else if (totals.sodium > 0) {
-    strengths.push(`Sodium control is well managed (${totals.sodium}mg within ${goals.maxSodium}mg ceiling).`);
+    strengths.push(`Sodium control is well managed (${formatNum(totals.sodium)}mg within ${formatNum(goals.maxSodium)}mg ceiling).`);
   }
 
   // Added Sugar check
   if (goals.maxSugar > 0 && totals.sugar > goals.maxSugar) {
-    areasOfConcern.push(`Added sugar consumption (${totals.sugar}g) exceeds your recommended cap of ${goals.maxSugar}g, driving insulin spikes.`);
+    areasOfConcern.push(`Added sugar consumption (${formatNum(totals.sugar)}g) exceeds your recommended cap of ${formatNum(goals.maxSugar)}g, driving insulin spikes.`);
   }
 
-  // Identify high-impact items for swaps only if exceeding daily limits
-  const isOverDailyLimit =
-    (goals.targetCalories > 0 && totals.calories > goals.targetCalories) ||
-    (goals.maxSodium > 0 && totals.sodium > goals.maxSodium) ||
-    (goals.maxSugar > 0 && totals.sugar > goals.maxSugar);
+  // Suggest calorie-reducing swaps only if exceeding daily target calories
+  const isOverCalorieLimit = (goals.targetCalories > 0 && totals.calories > goals.targetCalories);
 
-  if (isOverDailyLimit) {
+  if (isOverCalorieLimit) {
     let simCalories = totals.calories;
-    let simSodium = totals.sodium;
-    let simSugar = totals.sugar;
 
     for (const item of items) {
-      // If already brought right below all daily limits, stop immediately!
-      const calSatisfied = goals.targetCalories <= 0 || simCalories <= goals.targetCalories;
-      const sodiumSatisfied = goals.maxSodium <= 0 || simSodium <= goals.maxSodium;
-      const sugarSatisfied = goals.maxSugar <= 0 || simSugar <= goals.maxSugar;
-      if (calSatisfied && sodiumSatisfied && sugarSatisfied) {
+      // Once the swap reaches a relatively good amount just below the total calories, stop swapping!
+      if (simCalories <= goals.targetCalories) {
         break;
       }
 
@@ -245,22 +246,12 @@ function generateRuleBasedAnalysis(items: any[], goals: any) {
         };
       }
 
-      if (alt) {
+      if (alt && alt.savings.calories > 0) {
         alternatives.push(alt);
         simCalories -= alt.savings.calories;
-        simSodium -= alt.savings.sodium;
-        simSugar -= alt.savings.sugar;
 
-        // If limits now satisfied or we reached 2 swaps, break
-        if (
-          (goals.targetCalories <= 0 || simCalories <= goals.targetCalories) &&
-          (goals.maxSodium <= 0 || simSodium <= goals.maxSodium) &&
-          (goals.maxSugar <= 0 || simSugar <= goals.maxSugar)
-        ) {
-          break;
-        }
-
-        if (alternatives.length >= 2) {
+        // Once the swap reaches a relatively good amount just below the total calories, stop swapping!
+        if (simCalories <= goals.targetCalories) {
           break;
         }
       }
@@ -440,12 +431,16 @@ app.post('/api/analyze-consumption', async (req, res) => {
       return res.json(fallbackAnalysis);
     }
 
+    const macroTotals = calculateMacroTotals(items);
+    const totalCurrentCalories = macroTotals.calories;
+    const targetCalories = Number(goals?.targetCalories) || 2000;
+
     const prompt = `You are an elite clinical dietitian and functional nutrition coach.
 Analyze the user's daily food consumption against their specified nutritional goals:
 USER GOAL:
 Name: ${goals?.goalName || 'Balanced Nutrition'}
 Primary Goal: ${goals?.primaryGoal || 'healthy'}
-Target Calories: ${goals?.targetCalories || 2000} kcal
+Target Calories: ${targetCalories} kcal
 Target Protein: ${goals?.targetProtein || 120} g
 Target Carbs: ${goals?.targetCarbs || 220} g
 Target Fat: ${goals?.targetFat || 65} g
@@ -463,14 +458,19 @@ TASK:
 2. Write a concise, evidence-based executive summary evaluating their progress against their specific goal.
 3. List 2-4 key nutritional strengths.
 4. List 2-4 key nutritional areas of concern (e.g. sodium spikes, refined sugars, missing fiber, protein distribution).
-5. Suggest 1 to 4 concrete, delicious, and realistic HEALTHIER ALTERNATIVES for the most problematic/suboptimal items in their day.
+5. HEALTHIER ALTERNATIVES - STRICT STOPPING RULE:
+   - Current daily intake: ${totalCurrentCalories} kcal.
+   - User's target calorie ceiling: ${targetCalories} kcal.
+   - If current intake (${totalCurrentCalories} kcal) is ALREADY at or below target (${targetCalories} kcal), DO NOT propose any calorie-reducing swaps! Return an empty array [] for 'alternatives'.
+   - If current intake exceeds the target, suggest swaps for the highest calorie/suboptimal items ONE BY ONE.
+   - CRITICAL STOPPING RULE: Once the proposed swap(s) reduce the projected daily calorie total to a relatively good amount just below the target calories (i.e. just below ${targetCalories} kcal, e.g. within 0-120 kcal below target), YOU MUST STOP SWAPPING IMMEDIATELY! Do NOT suggest further swaps that plunge the user into an excessive caloric deficit!
    - For EACH alternative:
      - Match it directly to the exact 'originalFoodId' and 'originalFoodName' from the list above!
-     - 'suggestedItemName': specific, mouthwatering healthier swap (e.g. "Air-Fried Crispy Turkey Burger on Sprouted Brioche with Baked Sweet Potato Wedges").
+     - 'suggestedItemName': specific, delicious healthier swap.
      - Accurate macros for the swap (calories, protein, carbs, fat, fiber, sodium, sugar).
-     - 'whyHealthier': clinical reasoning (e.g. "Replaces trans-fats and 900mg sodium with heart-healthy monounsaturated fats and 6g prebiotic fiber").
-     - 'satisfiesCraving': psychological explanation of how it satisfies the same sensory cravings (texture, warmth, crunch, umami, sweetness) without deprivation.
-     - 'preparationOrOrderTip': real-world hack (how to order it at a drive-thru / restaurant, or prep it at home in 5 minutes).
+     - 'whyHealthier': clinical reasoning.
+     - 'satisfiesCraving': psychological and sensory explanation.
+     - 'preparationOrOrderTip': real-world hack.
      - 'savings': exact calculation of saved calories, sodium, sugar, fat, and gains in protein/fiber.
 6. Provide a 3-step daily tactical action plan for tomorrow.`;
 
@@ -548,19 +548,40 @@ TASK:
     });
 
     const parsed = JSON.parse(response.text?.trim() || '{}');
-    const macroTotals = calculateMacroTotals(items);
+
+    // Programmatic enforcement:
+    // Once the swap reaches a relatively good amount just below the total calories, you need to stop swapping!
+    const filteredAlternatives: any[] = [];
+    if (macroTotals.calories > targetCalories && Array.isArray(parsed.alternatives)) {
+      let simCalories = macroTotals.calories;
+      for (const alt of parsed.alternatives) {
+        if (simCalories <= targetCalories) {
+          break;
+        }
+        filteredAlternatives.push({
+          ...alt,
+          id: alt.id || `alt-${filteredAlternatives.length}-${Date.now()}`,
+        });
+        const saved = Number(alt?.savings?.calories) || Math.max(0, (Number(alt?.originalCalories) || 0) - Number(alt?.calories || 0));
+        simCalories -= saved;
+
+        // As soon as the swap reaches a relatively good amount just below the total calories, stop swapping!
+        if (simCalories <= targetCalories) {
+          break;
+        }
+      }
+    }
 
     const result = {
       overallScore: Math.min(100, Math.max(10, parsed.overallScore || 75)),
       healthGrade: parsed.healthGrade || 'B',
-      summary: parsed.summary || 'Analysis complete.',
+      summary: filteredAlternatives.length === 0 && macroTotals.calories <= targetCalories
+        ? `Your daily intake (${macroTotals.calories} kcal) is comfortably within your ${targetCalories} kcal target. No further calorie reduction needed.`
+        : parsed.summary || 'Analysis complete.',
       goalAlignmentInsight: parsed.goalAlignmentInsight || '',
       strengths: parsed.strengths || [],
       areasOfConcern: parsed.areasOfConcern || [],
-      alternatives: (parsed.alternatives || []).map((alt: any, idx: number) => ({
-        ...alt,
-        id: alt.id || `alt-${idx}-${Date.now()}`,
-      })),
+      alternatives: filteredAlternatives,
       dailyActionPlan: parsed.dailyActionPlan || [],
       macroTotals,
     };

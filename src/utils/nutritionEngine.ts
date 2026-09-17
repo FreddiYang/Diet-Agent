@@ -1,109 +1,156 @@
-import { FoodItem, NutritionalGoals, DailyAnalysis, HealthierAlternative } from '../types';
-import { GRAPHIC_FOOD_DATABASE, GraphicFoodItem } from '../data/foodDatabase';
+import { FoodItem, NutritionalGoals, DailyAnalysis, HealthierAlternative, Ingredient } from '../types';
+import { INGREDIENTS_DATABASE, calculateIngredientNutrition } from '../data/foodDatabase';
+import { roundToTwo, formatNum } from './formatters';
 
 export function calculateTotals(items: FoodItem[]) {
-  return items.reduce(
+  const raw = items.reduce(
     (acc, item) => ({
-      calories: Math.round(acc.calories + (Number(item.calories) || 0)),
-      protein: Math.round(acc.protein + (Number(item.protein) || 0)),
-      carbs: Math.round(acc.carbs + (Number(item.carbs) || 0)),
-      fat: Math.round(acc.fat + (Number(item.fat) || 0)),
-      fiber: Math.round(acc.fiber + (Number(item.fiber) || 0)),
-      sodium: Math.round(acc.sodium + (Number(item.sodium) || 0)),
-      sugar: Math.round(acc.sugar + (Number(item.sugar) || 0)),
+      calories: acc.calories + (Number(item.calories) || 0),
+      protein: acc.protein + (Number(item.protein) || 0),
+      carbs: acc.carbs + (Number(item.carbs) || 0),
+      fat: acc.fat + (Number(item.fat) || 0),
+      fiber: acc.fiber + (Number(item.fiber) || 0),
+      sodium: acc.sodium + (Number(item.sodium) || 0),
+      sugar: acc.sugar + (Number(item.sugar) || 0),
     }),
     { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sodium: 0, sugar: 0 }
   );
+
+  return {
+    calories: roundToTwo(raw.calories),
+    protein: roundToTwo(raw.protein),
+    carbs: roundToTwo(raw.carbs),
+    fat: roundToTwo(raw.fat),
+    fiber: roundToTwo(raw.fiber),
+    sodium: roundToTwo(raw.sodium),
+    sugar: roundToTwo(raw.sugar),
+  };
 }
 
-// Helper to look up a graphic food by name snippet or id
-function findGraphicFood(predicate: (f: GraphicFoodItem) => boolean): GraphicFoodItem | undefined {
-  return GRAPHIC_FOOD_DATABASE.find(predicate);
+// Helper to look up an ingredient by ID or name
+function findDatabaseIngredient(predicate: (i: Ingredient) => boolean): Ingredient | undefined {
+  return INGREDIENTS_DATABASE.find(predicate);
 }
 
-// Generate smart healthier alternatives selected directly from the graphic foods list
-export function generateAlternativeForItem(item: FoodItem, goals: NutritionalGoals): HealthierAlternative {
+// Generate smart healthier alternatives selected directly from the Ingredient Database
+export function generateAlternativeForItem(item: FoodItem, goals: NutritionalGoals): HealthierAlternative | null {
   const name = (item.name || '').toLowerCase();
-  const cal = Number(item.calories) || 350;
-  const sod = Number(item.sodium) || 400;
-  const sug = Number(item.sugar) || 10;
-  const prot = Number(item.protein) || 15;
-  const fat = Number(item.fat) || 15;
-  const fib = Number(item.fiber) || 2;
+  const weight = item.weightGrams || 50;
 
-  // Candidates from graphic food database that are clean/healthy (not comfort)
-  const healthyFoods = GRAPHIC_FOOD_DATABASE.filter((f) => !f.isComfort);
+  // 1. Direct ingredientId match
+  let targetIngredient: Ingredient | undefined;
+  let targetWeight = weight;
+  let whyHealthier = '';
 
-  let chosen: GraphicFoodItem | undefined;
-
-  // 1. Specific Keyword Matching to exact Graphic Foods
-  if (name.includes('pizza') || name.includes('calzone')) {
-    chosen = findGraphicFood((f) => f.name.includes('Thin Crust Margherita') || f.name.includes('Salmon'));
-  } else if (name.includes('burger') || name.includes('patty') || name.includes('cheeseburger')) {
-    chosen = findGraphicFood((f) => f.name.includes('Grilled Herb Chicken') || f.name.includes('Roast Turkey') || f.name.includes('Caesar Salad'));
-  } else if (name.includes('fry') || name.includes('fries') || name.includes('tater') || name.includes('onion ring')) {
-    chosen = findGraphicFood((f) => f.name.includes('Popcorn') || f.name.includes('Edamame') || f.name.includes('Carrots'));
-  } else if (name.includes('bagel') || name.includes('bacon') || name.includes('sausage burrito')) {
-    chosen = findGraphicFood((f) => f.name.includes('Avocado & Poached Egg') || f.name.includes('Egg White Bites'));
-  } else if (name.includes('pancake') || name.includes('waffle') || name.includes('muffin') || name.includes('croissant') || name.includes('cinnamon roll')) {
-    chosen = findGraphicFood((f) => f.name.includes('Greek Yogurt Parfait') || f.name.includes('Oatmeal with Berries'));
-  } else if (name.includes('soda') || name.includes('cola') || name.includes('punch') || name.includes('juice') || name.includes('sprite')) {
-    chosen = findGraphicFood((f) => f.name.includes('Sparkling Water') || f.name.includes('Matcha') || f.name.includes('Coconut Water'));
-  } else if (name.includes('coffee') || name.includes('frappe') || name.includes('macchiato') || name.includes('latte')) {
-    chosen = findGraphicFood((f) => f.name.includes('Cold Brew') || f.name.includes('Protein Shake'));
-  } else if (name.includes('chip') || name.includes('queso') || name.includes('nacho') || name.includes('pretzel')) {
-    chosen = findGraphicFood((f) => f.name.includes('Popcorn') || f.name.includes('Carrots & Creamy Hummus') || f.name.includes('Edamame'));
-  } else if (name.includes('donut') || name.includes('cupcake') || name.includes('chocolate') || name.includes('candy') || name.includes('cookie')) {
-    chosen = findGraphicFood((f) => f.name.includes('Crisp Apple with Almond') || f.name.includes('Blueberries & Walnuts'));
-  } else if (name.includes('sub') || name.includes('sandwich') || name.includes('cold cut') || name.includes('wrap')) {
-    chosen = findGraphicFood((f) => f.name.includes('Roast Turkey on Sprouted') || f.name.includes('Turkey Avocado Bacon Wrap'));
-  } else if (name.includes('chicken') && (name.includes('fried') || name.includes('strip') || name.includes('tender') || name.includes('nugget') || name.includes('wing'))) {
-    chosen = findGraphicFood((f) => f.name.includes('Air-Fried Herb Chicken') || f.name.includes('Grilled Herb Chicken'));
-  } else if (name.includes('pasta') || name.includes('alfredo') || name.includes('macaroni') || name.includes('spaghetti')) {
-    chosen = findGraphicFood((f) => f.name.includes('Chickpea Penne') || f.name.includes('Garlic Shrimp over Zucchini'));
-  } else if (name.includes('rib') || name.includes('steak') || name.includes('bbq') || name.includes('meat')) {
-    chosen = findGraphicFood((f) => f.name.includes('Grilled Sirloin Steak') || f.name.includes('Baked Lemon Salmon') || f.name.includes('Flank Steak'));
-  } else if (name.includes('taco') || name.includes('burrito')) {
-    chosen = findGraphicFood((f) => f.name.includes('Grilled Fish Tacos') || f.name.includes('Flank Steak Fajitas'));
-  } else if (name.includes('curry') || name.includes('tikka')) {
-    chosen = findGraphicFood((f) => f.name.includes('Lentil Coconut Curry') || f.name.includes('Lentil Veggie Soup'));
-  }
-
-  // 2. Fallback: pick best matching healthy food in the same meal category
-  if (!chosen) {
-    const sameCat = healthyFoods.filter((f) => f.category === item.category);
-    if (sameCat.length > 0) {
-      // Pick item with highest calorie difference or lowest calories
-      chosen = sameCat.reduce((best, cur) => (cur.calories < best.calories ? cur : best), sameCat[0]);
-    } else {
-      chosen = healthyFoods[0];
+  if (item.ingredientId) {
+    const directIng = INGREDIENTS_DATABASE.find((i) => i.id === item.ingredientId);
+    if (directIng && directIng.swapAlternativeId) {
+      targetIngredient = INGREDIENTS_DATABASE.find((i) => i.id === directIng.swapAlternativeId);
+      if (directIng.swapReason) {
+        whyHealthier = directIng.swapReason;
+      }
     }
   }
 
-  const calSavings = Math.max(0, cal - chosen.calories);
-  const sodSavings = Math.max(0, sod - chosen.sodium);
-  const sugSavings = Math.max(0, sug - chosen.sugar);
-  const fatSavings = Math.max(0, fat - chosen.fat);
-  const protGain = Math.max(0, chosen.protein - prot);
-  const fibGain = Math.max(0, chosen.fiber - fib);
+  // 2. Keyword matching directly into Ingredient Database
+  if (!targetIngredient) {
+    if (name.includes('bacon')) {
+      targetIngredient = findDatabaseIngredient((i) => i.id === 'ing-turkey-bacon');
+      targetWeight = weight;
+      whyHealthier = 'Turkey bacon cuts saturated fat and calorie load significantly.';
+    } else if (name.includes('white bread') || name.includes('sandwich bread') || name.includes('bagel')) {
+      targetIngredient = findDatabaseIngredient((i) => i.id === 'ing-whole-wheat-bread');
+      targetWeight = weight;
+      whyHealthier = '100% Whole Wheat preserves the grain germ and bran for steady glucose and higher fiber.';
+    } else if (name.includes('mayo') || name.includes('mayonnaise')) {
+      targetIngredient = findDatabaseIngredient((i) => i.id === 'ing-avocado-oil-mayo');
+      targetWeight = weight;
+      whyHealthier = 'Avocado oil mayo halves the calories and replaces seed oils with monounsaturates.';
+    } else if (name.includes('butter') || name.includes('margarine')) {
+      targetIngredient = findDatabaseIngredient((i) => i.id === 'ing-extra-virgin-olive-oil');
+      targetWeight = weight;
+      whyHealthier = 'Extra virgin olive oil provides cardioprotective polyphenols without dairy saturated fats.';
+    } else if (name.includes('fry') || name.includes('fries') || name.includes('tater')) {
+      targetIngredient = findDatabaseIngredient((i) => i.id === 'ing-sweet-potato');
+      targetWeight = Math.max(weight, 130);
+      whyHealthier = 'Baked sweet potato removes deep-fry trans fats and is loaded with beta-carotene.';
+    } else if (name.includes('cola') || name.includes('soda') || name.includes('sweetened')) {
+      targetIngredient = findDatabaseIngredient((i) => i.id === 'ing-sparkling-water');
+      targetWeight = weight;
+      whyHealthier = 'Sparkling mineral water completely eliminates added high-fructose corn syrup.';
+    } else if (name.includes('sugar') || name.includes('syrup')) {
+      targetIngredient = findDatabaseIngredient((i) => i.id === 'ing-stevia');
+      targetWeight = 2;
+      whyHealthier = 'Stevia leaf extract delivers sweetness with 0 calories and 0 glycemic impact.';
+    } else if (name.includes('chip') || name.includes('crisp')) {
+      targetIngredient = findDatabaseIngredient((i) => i.id === 'ing-popcorn-airpopped');
+      targetWeight = weight;
+      whyHealthier = 'Air-popped popcorn is 100% whole grain volume crunch with 70% less fat.';
+    } else if (name.includes('beef') || name.includes('patty') || name.includes('burger')) {
+      targetIngredient = findDatabaseIngredient((i) => i.id === 'ing-ground-turkey-937');
+      targetWeight = weight;
+      whyHealthier = 'Lean 93/7 ground poultry cuts fat by more than half while packing clean amino acids.';
+    } else if (name.includes('cheddar') || (name.includes('cheese') && !name.includes('cottage'))) {
+      targetIngredient = findDatabaseIngredient((i) => i.id === 'ing-part-skim-mozzarella');
+      targetWeight = weight;
+      whyHealthier = 'Part-skim mozzarella reduces saturated fat and sodium while increasing protein density.';
+    } else if (name.includes('milk') && !name.includes('almond') && !name.includes('soy')) {
+      targetIngredient = findDatabaseIngredient((i) => i.id === 'ing-almond-milk-unsweetened');
+      targetWeight = weight;
+      whyHealthier = 'Unsweetened almond milk slashes calories by 75% for coffees, shakes, and cereals.';
+    } else if (name.includes('pasta') || name.includes('spaghetti') || name.includes('noodle')) {
+      targetIngredient = findDatabaseIngredient((i) => i.id === 'ing-quinoa');
+      targetWeight = weight;
+      whyHealthier = 'Quinoa supplies complete plant proteins and prevents rapid postprandial glucose spikes.';
+    } else if (name.includes('white rice')) {
+      targetIngredient = findDatabaseIngredient((i) => i.id === 'ing-brown-rice');
+      targetWeight = weight;
+      whyHealthier = 'Cooked brown rice delivers 4x higher fiber and complex B-vitamins.';
+    } else if (name.includes('pepperoni') || name.includes('salami') || name.includes('sausage')) {
+      targetIngredient = findDatabaseIngredient((i) => i.id === 'ing-deli-turkey');
+      targetWeight = Math.max(weight, 60);
+      whyHealthier = 'Lean deli turkey eliminates cured nitrates and cuts sodium drastically.';
+    } else if (name.includes('chocolate') && !name.includes('dark')) {
+      targetIngredient = findDatabaseIngredient((i) => i.id === 'ing-dark-chocolate-85');
+      targetWeight = 25;
+      whyHealthier = '85% Dark cacao cuts sugar by 75% while providing rich magnesium and antioxidants.';
+    }
+  }
+
+  if (!targetIngredient) {
+    // If no candidate, pick a clean baseline staple from the database that beats the current item
+    const cleanStaples = INGREDIENTS_DATABASE.filter((i) => !i.isUnhealthyOrComfort);
+    targetIngredient = cleanStaples.find((i) => i.aisle === 'produce' || i.aisle === 'proteins') || cleanStaples[0];
+    targetWeight = targetIngredient.suggestedGrams;
+    whyHealthier = `Wholesome ${targetIngredient.name.toLowerCase()} delivers dense nutrients with minimal processed additives.`;
+  }
+
+  const swapNut = calculateIngredientNutrition(targetIngredient, targetWeight);
+
+  const calSavings = Math.max(0, roundToTwo(Number(item.calories || 0) - swapNut.calories));
+  const sodSavings = Math.max(0, roundToTwo(Number(item.sodium || 0) - swapNut.sodium));
+  const sugSavings = Math.max(0, roundToTwo(Number(item.sugar || 0) - swapNut.sugar));
+  const fatSavings = Math.max(0, roundToTwo(Number(item.fat || 0) - swapNut.fat));
+  const protGain = Math.max(0, roundToTwo(swapNut.protein - Number(item.protein || 0)));
+  const fibGain = Math.max(0, roundToTwo(swapNut.fiber - Number(item.fiber || 0)));
 
   return {
-    id: `swap-${item.id}-${chosen.id}`,
+    id: `swap-${item.id}-${targetIngredient.id}`,
     originalFoodId: item.id,
-    originalFoodName: item.name,
-    suggestedItemName: chosen.name,
-    icon: chosen.icon,
-    portion: chosen.portion,
-    calories: chosen.calories,
-    protein: chosen.protein,
-    carbs: chosen.carbs,
-    fat: chosen.fat,
-    fiber: chosen.fiber,
-    sodium: chosen.sodium,
-    sugar: chosen.sugar,
-    whyHealthier: calSavings > 0 ? `Saves ${calSavings} kcal and ${sodSavings}mg sodium.` : `Higher fiber and lean nutrition.`,
-    satisfiesCraving: `Matches craving with wholesome ${chosen.tag.toLowerCase()} ingredients.`,
-    preparationOrOrderTip: `Available directly in your Graphic Food catalog on the left.`,
+    originalFoodName: `${item.name} (${item.portion || `${weight}g`})`,
+    suggestedItemName: `${targetIngredient.name} (${swapNut.portion})`,
+    icon: targetIngredient.icon,
+    portion: swapNut.portion,
+    calories: swapNut.calories,
+    protein: swapNut.protein,
+    carbs: swapNut.carbs,
+    fat: swapNut.fat,
+    fiber: swapNut.fiber,
+    sodium: swapNut.sodium,
+    sugar: swapNut.sugar,
+    whyHealthier: whyHealthier || `Saves ${formatNum(calSavings)} kcal, ${formatNum(sodSavings)}mg sodium with whole-ingredient nutrition.`,
+    satisfiesCraving: `Replaces ${item.name} with authentic, clean ${targetIngredient.name} from your pantry staples.`,
+    preparationOrOrderTip: `Swap in your log or kitchen recipe to immediately rebalance your daily macros.`,
     savings: {
       calories: calSavings,
       sodium: sodSavings,
@@ -121,7 +168,7 @@ export function analyzeConsumptionLocally(items: FoodItem[], goals: NutritionalG
   const areasOfConcern: string[] = [];
   const strengths: string[] = [];
 
-  const calExcess = totals.calories - goals.targetCalories;
+  const calExcess = roundToTwo(totals.calories - goals.targetCalories);
   const isCalOver = goals.targetCalories > 0 && calExcess > 80;
   const isCalDeficitHigh = goals.targetCalories > 0 && calExcess < -400;
   const isSodiumOver = goals.maxSodium > 0 && totals.sodium > goals.maxSodium;
@@ -132,43 +179,43 @@ export function analyzeConsumptionLocally(items: FoodItem[], goals: NutritionalG
 
   // Caloric evaluation
   if (isCalOver) {
-    areasOfConcern.push(`Caloric intake (${totals.calories} kcal) exceeds your daily budget of ${goals.targetCalories} kcal by +${calExcess} kcal.`);
+    areasOfConcern.push(`Caloric intake (${formatNum(totals.calories)} kcal) exceeds your daily budget of ${formatNum(goals.targetCalories)} kcal by +${formatNum(calExcess)} kcal.`);
   } else if (isCalDeficitHigh && totals.calories > 0) {
-    areasOfConcern.push(`Caloric intake (${totals.calories} kcal) is substantially below your ${goals.targetCalories} kcal target. Ensure adequate fueling to avoid metabolic slowdown.`);
+    areasOfConcern.push(`Caloric intake (${formatNum(totals.calories)} kcal) is below your ${formatNum(goals.targetCalories)} kcal target. Ensure adequate fueling to avoid metabolic slowdown.`);
   } else if (totals.calories > 0) {
-    strengths.push(`Calorie intake (${totals.calories} kcal) is strictly aligned with your target (${goals.targetCalories} kcal).`);
+    strengths.push(`Calorie intake (${formatNum(totals.calories)} kcal) is strictly aligned with your target (${formatNum(goals.targetCalories)} kcal).`);
   }
 
   // Macronutrient evaluation
   if (totals.protein >= goals.targetProtein * 0.9) {
-    strengths.push(`Protein target achieved (${totals.protein}g / ${goals.targetProtein}g), supporting muscle retention and metabolic thermogenesis.`);
+    strengths.push(`Protein target achieved (${formatNum(totals.protein)}g / ${formatNum(goals.targetProtein)}g), supporting muscle retention and high satiety.`);
   } else if (isProteinUnder) {
-    areasOfConcern.push(`Protein deficit detected (${totals.protein}g vs ${goals.targetProtein}g goal). Prioritize lean poultry, egg whites, Greek yogurt, or legumes.`);
+    areasOfConcern.push(`Protein deficit detected (${formatNum(totals.protein)}g vs ${formatNum(goals.targetProtein)}g goal). Prioritize lean poultry, egg whites, Greek yogurt, or legumes.`);
   }
 
   if (totals.fiber >= goals.targetFiber * 0.9) {
-    strengths.push(`Excellent dietary fiber level (${totals.fiber}g / ${goals.targetFiber}g), stabilizing glycemic curve and supporting gut microbiome.`);
+    strengths.push(`Excellent dietary fiber level (${formatNum(totals.fiber)}g / ${formatNum(goals.targetFiber)}g), stabilizing glycemic curve and supporting gut microbiome.`);
   } else if (isFiberUnder) {
-    areasOfConcern.push(`Dietary fiber is low (${totals.fiber}g vs ${goals.targetFiber}g goal). Adding chia seeds, berries, and vegetables will reduce glucose spikes.`);
+    areasOfConcern.push(`Dietary fiber is low (${formatNum(totals.fiber)}g vs ${formatNum(goals.targetFiber)}g goal). Adding chia seeds, berries, and vegetables will reduce glucose spikes.`);
   }
 
   if (isSodiumOver) {
-    areasOfConcern.push(`Sodium level (${totals.sodium}mg) exceeds your threshold of ${goals.maxSodium}mg by ${totals.sodium - goals.maxSodium}mg, risking blood pressure elevation.`);
+    areasOfConcern.push(`Sodium level (${formatNum(totals.sodium)}mg) exceeds your threshold of ${formatNum(goals.maxSodium)}mg by ${formatNum(totals.sodium - goals.maxSodium)}mg, risking blood pressure elevation.`);
   } else if (totals.sodium > 0) {
-    strengths.push(`Sodium consumption (${totals.sodium}mg) is well-controlled under your ${goals.maxSodium}mg threshold.`);
+    strengths.push(`Sodium consumption (${formatNum(totals.sodium)}mg) is well-controlled under your ${formatNum(goals.maxSodium)}mg threshold.`);
   }
 
   if (isSugarOver) {
-    areasOfConcern.push(`Added sugar (${totals.sugar}g) exceeds your recommended cap of ${goals.maxSugar}g by +${totals.sugar - goals.maxSugar}g, driving reactive hypoglycemia.`);
+    areasOfConcern.push(`Added sugar (${formatNum(totals.sugar)}g) exceeds your recommended cap of ${formatNum(goals.maxSugar)}g by +${formatNum(totals.sugar - goals.maxSugar)}g, driving reactive hypoglycemia.`);
   } else if (totals.sugar > 0) {
-    strengths.push(`Added sugars (${totals.sugar}g) remain comfortably within your healthy ceiling.`);
+    strengths.push(`Added sugars (${formatNum(totals.sugar)}g) remain comfortably within your healthy ceiling.`);
   }
 
   if (isFatOver) {
-    areasOfConcern.push(`Total fat intake (${totals.fat}g) exceeds your target of ${goals.targetFat}g. Look out for hidden seed oils and processed saturated fats.`);
+    areasOfConcern.push(`Total fat intake (${formatNum(totals.fat)}g) exceeds your target of ${formatNum(goals.targetFat)}g. Look out for hidden seed oils and processed saturated fats.`);
   }
 
-  // Rank items by nutritional concern/density
+  // Rank items by nutritional concern/density to identify swap targets
   const itemsWithImpact = items.map((item) => {
     let score = 0;
     const itemCal = Number(item.calories) || 0;
@@ -176,19 +223,29 @@ export function analyzeConsumptionLocally(items: FoodItem[], goals: NutritionalG
     const itemSug = Number(item.sugar) || 0;
     const itemFat = Number(item.fat) || 0;
 
-    // Weight by calories
-    if (itemCal > 450) score += (itemCal - 400) * 0.3;
-    // Weight by sodium
-    if (itemSod > 700) score += (itemSod - 600) * 0.2;
-    // Weight by sugar
-    if (itemSug > 18) score += (itemSug - 15) * 3.5;
-    // Weight by fat
-    if (itemFat > 25) score += (itemFat - 20) * 2;
-
-    // Tag check
-    if (item.healthTags?.some((t) => t.toLowerCase().includes('high') || t.toLowerCase().includes('processed'))) {
-      score += 30;
+    // Check if item corresponds to an unhealthier ingredient
+    if (item.ingredientId) {
+      const ing = INGREDIENTS_DATABASE.find((i) => i.id === item.ingredientId);
+      if (ing?.isUnhealthyOrComfort) score += 60;
     }
+
+    const nameLower = (item.name || '').toLowerCase();
+    if (
+      nameLower.includes('bacon') ||
+      nameLower.includes('fries') ||
+      nameLower.includes('cola') ||
+      nameLower.includes('chips') ||
+      nameLower.includes('sugar') ||
+      nameLower.includes('mayo')
+    ) {
+      score += 50;
+    }
+
+    if (itemCal > 250) score += (itemCal - 200) * 0.2;
+    if (itemSod > 400) score += (itemSod - 350) * 0.15;
+    if (itemSug > 12) score += (itemSug - 10) * 3;
+    if (itemFat > 15) score += (itemFat - 12) * 2;
+
     return { item, score };
   });
 
@@ -196,59 +253,43 @@ export function analyzeConsumptionLocally(items: FoodItem[], goals: NutritionalG
   itemsWithImpact.sort((a, b) => b.score - a.score);
 
   const alternatives: HealthierAlternative[] = [];
-  const isOverDailyLimit =
-    (goals.targetCalories > 0 && totals.calories > goals.targetCalories) ||
-    (goals.maxSodium > 0 && totals.sodium > goals.maxSodium) ||
-    (goals.maxSugar > 0 && totals.sugar > goals.maxSugar);
+  const targetCalories = goals.targetCalories || 2000;
+  const isOverCalorieLimit = totals.calories > targetCalories;
 
-  // Only generate swaps if exceeding daily intake limit
-  if (isOverDailyLimit && items.length > 0) {
+  // CRITICAL USER REQUIREMENT:
+  // Once the swap reaches a relatively good amount just below the total calories, stop swapping immediately!
+  // If current calories are already at or below target, do not suggest calorie-reducing swaps.
+  if (items.length > 0 && isOverCalorieLimit) {
     let simCalories = totals.calories;
-    let simSodium = totals.sodium;
-    let simSugar = totals.sugar;
 
     for (const { item } of itemsWithImpact) {
-      // Check if simulated intake has reached right below all daily limits
-      const calSatisfied = goals.targetCalories <= 0 || simCalories <= goals.targetCalories;
-      const sodiumSatisfied = goals.maxSodium <= 0 || simSodium <= goals.maxSodium;
-      const sugarSatisfied = goals.maxSugar <= 0 || simSugar <= goals.maxSugar;
-
-      if (calSatisfied && sodiumSatisfied && sugarSatisfied) {
-        break; // Stop iterations once within limit!
+      // If already at or just below target calories, STOP!
+      if (simCalories <= targetCalories) {
+        break;
       }
 
       const alt = generateAlternativeForItem(item, goals);
-      alternatives.push(alt);
+      if (alt && alt.savings.calories > 0) {
+        alternatives.push(alt);
+        simCalories -= alt.savings.calories;
 
-      simCalories -= alt.savings.calories;
-      simSodium -= alt.savings.sodium;
-      simSugar -= alt.savings.sugar;
-
-      // If this single swap brings intake right below limits, stop immediately!
-      if (
-        (goals.targetCalories <= 0 || simCalories <= goals.targetCalories) &&
-        (goals.maxSodium <= 0 || simSodium <= goals.maxSodium) &&
-        (goals.maxSugar <= 0 || simSugar <= goals.maxSugar)
-      ) {
-        break;
-      }
-
-      // Hard cap at 2 swaps maximum to keep interactions simple and minimal
-      if (alternatives.length >= 2) {
-        break;
+        // As soon as the swap reaches a relatively good amount just below the total calories, STOP swapping!
+        if (simCalories <= targetCalories) {
+          break;
+        }
       }
     }
   }
 
   // Calculate overall Health Score (0 - 100)
-  let score = 84;
+  let score = 85;
   if (isCalOver) score -= Math.min(25, Math.round(calExcess / 45));
   if (isSodiumOver) score -= Math.min(22, Math.round((totals.sodium - goals.maxSodium) / 110));
   if (isSugarOver) score -= Math.min(22, Math.round((totals.sugar - goals.maxSugar) / 4.5));
   if (isProteinUnder) score -= 8;
   if (isFiberUnder) score -= 8;
   if (strengths.length > 0) score += strengths.length * 3;
-  score = Math.max(25, Math.min(97, score));
+  score = Math.max(25, Math.min(98, score));
 
   let grade = 'B';
   if (score >= 90) grade = 'A';
@@ -257,21 +298,26 @@ export function analyzeConsumptionLocally(items: FoodItem[], goals: NutritionalG
   else if (score >= 60) grade = 'C';
   else grade = 'Needs Improvement';
 
+  const totalSavedCalories = alternatives.reduce((acc, a) => acc + a.savings.calories, 0);
+  const projectedCalories = roundToTwo(totals.calories - totalSavedCalories);
+
   const summary = alternatives.length > 0
-    ? `Recommended ${alternatives.length} smart swap${alternatives.length > 1 ? 's' : ''} to bring your daily totals right below your target limit.`
-    : `All clear! Your daily intake is currently below your target limit.`;
+    ? `Identified ${alternatives.length} whole-ingredient swap${alternatives.length > 1 ? 's' : ''} to bring your daily total to ${formatNum(projectedCalories)} kcal, comfortably just below your ${formatNum(targetCalories)} kcal target.`
+    : totals.calories > 0 && totals.calories <= targetCalories
+    ? `Your daily intake (${formatNum(totals.calories)} kcal) is already within your ${formatNum(targetCalories)} kcal target. No further calorie reduction needed.`
+    : `All clear! Your daily ingredient totals are within your healthy target range.`;
 
   return {
     overallScore: score,
     healthGrade: grade,
     summary,
     goalAlignmentInsight: `Target: ${goals.goalName} (${goals.targetCalories} kcal)`,
-    strengths: strengths.length > 0 ? strengths.slice(0, 2) : ['Nutritional intake logged.'],
+    strengths: strengths.length > 0 ? strengths.slice(0, 2) : ['Nutritional ingredients logged.'],
     areasOfConcern: areasOfConcern.length > 0 ? areasOfConcern.slice(0, 2) : ['No critical flags detected.'],
     alternatives,
     dailyActionPlan: alternatives.length > 0
-      ? [`Swap "${alternatives[0].originalFoodName}" to save ${alternatives[0].savings.calories} kcal.`]
-      : ['Maintain your current whole-food balance and stay hydrated.'],
+      ? alternatives.map((a) => `Swap "${a.originalFoodName}" to save ${a.savings.calories} kcal and align with your target.`)
+      : ['Maintain your healthy whole-ingredient balance and stay hydrated.'],
     macroTotals: totals,
   };
 }
